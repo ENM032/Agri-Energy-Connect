@@ -1,0 +1,41 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using WebApplication2.Areas.Identity.Data
+
+@inject SignInManager<WebApplication2User> SignInManager
+@inject UserManager<WebApplication2User> UserManager
+
+<ul class="collapse show nav flex-column ms-1" id="submenu3" data-bs-parent="#menu">
+@if (SignInManager.IsSignedIn(User))
+{
+        var user = UserManager.GetUserAsync(User).Result;
+        var displayname = user.Displayname;
+
+    @if (displayname == null || displayname == "")
+    {
+        <li class="w-100" >
+            <a id="manage" class="nav-link px-0 text-white" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">@user.Email</a>
+        </li>
+    }
+    else
+    {
+        <li class="w-100">
+            <a id="manage" class="nav-link px-0 text-white" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">@displayname</a>
+        </li>
+    }
+        
+    <li class="w-100">
+        <form id="logoutForm" class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+            <button id="logout" type="submit" class="nav-link btn btn-link text-white border-0">Logout</button>
+        </form>
+    </li>
+}
+else
+{
+    <li class="w-100">
+        <a class="nav-link px-0 text-white" id="register" asp-area="Identity" asp-page="/Account/Register">Register</a>
+    </li>
+    <li class="w-100">
+        <a class="nav-link px-0 text-white" id="login" asp-area="Identity" asp-page="/Account/Login">Login</a>
+    </li>
+}
+</ul>

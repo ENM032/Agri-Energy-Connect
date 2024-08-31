@@ -1,0 +1,80 @@
+﻿@model IEnumerable<WebApplication2.Models.Product>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Farmer Products</h1>
+<h6 style="color:darkgrey">After applying filters, click on the filter button again to view a list of all products</h6>
+
+<form asp-action="FarmerProducts" asp-controller="Employees" >
+    <select name="selectedUser" asp-items="ViewBag.UserName">
+        <option disabled selected>Select Farmer</option>
+    </select>
+    <select name="selectedCategory" asp-items="ViewBag.CategoriesSelectList">
+        <option disabled selected>Select Category</option>
+    </select>
+    Start date:
+    <input name="betweenStartDate" type="date" />
+    End date:
+    <input name="betweenEndDate" type="date" />
+    <button type="submit" class="btn btn-formpurple">
+        <i class="bi bi-search"></i>
+        Filter
+    </button>
+</form>
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<table class="table table-bordered table-responsive table-hover">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Name)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Category)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ProductDate)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.User.UserName)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.User.Displayname)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.UserId)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Name)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Category)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.ProductDate)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.User.UserName)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.User.Displayname)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.User.Id)
+                </td>
+                <td>
+                    <a asp-action="DeleteFarmerProduct" asp-route-id="@item.Id" class="labelbtn">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+

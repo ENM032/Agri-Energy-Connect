@@ -1,0 +1,54 @@
+﻿@page
+@model RegisterModel
+@{
+    ViewData["Title"] = "Register";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<div class="row">
+    <div class="col-md-4">
+        <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+            <h2>Create a new account.</h2>
+            <hr />
+            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+            <div class="form-floating mb-3">
+                <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+                <label asp-for="Input.Email">Email<span class="text-danger"> * </span></label>
+                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+            <div class="form-floating mb-3">
+                <input asp-for="Input.DisplayName" class="form-control" autocomplete="Displayname" aria-required="true" placeholder="yourname" />
+                <label asp-for="Input.DisplayName">Display Name</label>
+                <span asp-validation-for="Input.DisplayName " class="text-danger"></span>
+            </div>
+            <div class="form-floating mb-3">
+                <input asp-for="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
+                <label asp-for="Input.Password">Password<span class="text-danger"> * </span></label>
+                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            </div>
+            <div class="form-floating mb-3">
+                <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
+                <label asp-for="Input.ConfirmPassword">Confirm Password<span class="text-danger"> * </span></label>
+                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+            </div>
+            @* This code was taken from a Youtube video
+            Uploaded by: Macro Code
+            Titled: ASP.NET Core 7.0 Role Based Authorization || How to Implement Roles Based Authorization
+            Available at: https://www.youtube.com/watch?v=VZgxKbAdbbo
+            Accessed 24 May 2023 *@
+            <div class="form-floating mb-3">
+                <select asp-for="Input.Role" class="form-select" asp-items="@Model.Input.RolesList" aria-required="true" >
+                    <option disabled selected>Click me</option>
+                </select>
+                <label asp-for="Input.Role">Select Role<span class="text-danger"> * </span></label>
+                <span asp-validation-for="Input.Role" class="text-danger"></span>
+            </div>
+            <button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-formpurple">Register</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

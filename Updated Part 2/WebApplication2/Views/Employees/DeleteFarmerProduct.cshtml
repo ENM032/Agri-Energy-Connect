@@ -1,0 +1,53 @@
+﻿@model WebApplication2.Models.Product
+
+@{
+    ViewData["Title"] = "DeleteFarmerProduct";
+}
+
+<h1>Deleting farmer product...</h1>
+
+<h3 style="color:red">Are you sure you want to delete @Model.User.Displayname's product?</h3>
+<div>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Id)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Id)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Name)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Name)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Category)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Category)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.ProductDate)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.ProductDate)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.User)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.UserId)
+        </dd>
+    </dl>
+
+    <form asp-action="DeleteFarmerProduct">
+        <input type="hidden" asp-for="Id" />
+        <button type="submit" class="btn btn-formred">
+            <i class="bi bi-trash3-fill"></i>
+            Delete
+        </button> |
+        <a asp-action="Index">Back to List</a>
+    </form>
+</div>
