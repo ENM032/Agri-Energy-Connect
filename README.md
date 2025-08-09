@@ -3,14 +3,14 @@
 A comprehensive web platform that enables collaboration between energy providers and farmers, facilitating sustainable agricultural practices and energy management.
 
 ## 📋 Table of Contents
-- [Overview](#overview)
-- [Tech Stack](#tech-stack)
-- [Features](#features)
-- [Prerequisites](#prerequisites)
-- [Installation & Setup](#installation--setup)
-- [Running the Application](#running-the-application)
-- [Application Screenshots](#application-screenshots)
-- [Project Structure](#project-structure)
+- [Overview](#-overview)
+- [Tech Stack](#️-tech-stack)
+- [Features](#-features)
+- [Prerequisites](#-prerequisites)
+- [Installation & Setup](#️-installation--setup)
+- [Running the Application](#-running-the-application)
+- [Application Screenshots](#-application-screenshots)
+- [Project Structure](#-project-structure)
 
 ## 🌟 Overview
 
@@ -147,8 +147,8 @@ The application automatically seeds two roles:
 *Screenshots will be added here to showcase the application's user interface and functionality.*
 
 ### Login & Registration
-<!-- ![Login Page](assets/screenshots/login.png) -->
-<!-- ![Registration Page](assets/screenshots/register.png) -->
+![Login Page](assets/screenshots/login.png)
+![Registration Page](assets/screenshots/register.png)
 
 ### Dashboard Views
 <!-- ![Farmer Dashboard](assets/screenshots/farmer-dashboard.png) -->
