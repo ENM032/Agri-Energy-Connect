@@ -1,0 +1,215 @@
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="fade-in">
+    <!-- Hero Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 bg-primary text-white">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-leaf display-1 mb-3"></i>
+                    <h1 class="display-4 fw-bold mb-3">Welcome to Agri-Energy Connect</h1>
+                    <p class="lead mb-4">Connecting farmers with sustainable energy solutions for a greener future</p>
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <p class="mb-0">Welcome back, <strong>@User.Identity.Name</strong>!</p>
+                    }
+                    else
+                    {
+                        <a href="/Identity/Account/Register" class="btn btn-success btn-lg me-3">
+                            <i class="bi bi-person-plus me-2"></i>Get Started
+                        </a>
+                        <a href="/Identity/Account/Login" class="btn btn-outline-light btn-lg">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (User.Identity.IsAuthenticated)
+    {
+        <!-- Quick Actions -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="h4 mb-3"><i class="bi bi-lightning-charge me-2"></i>Quick Actions</h2>
+            </div>
+            @if (User.IsInRole("Farmer"))
+            {
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-0">
+                        <div class="card-body text-center">
+                            <i class="bi bi-plus-circle display-4 text-primary mb-3"></i>
+                            <h5 class="card-title">Add New Product</h5>
+                            <p class="card-text text-muted">Register your agricultural products</p>
+                            <a asp-controller="Products" asp-action="Create" class="btn btn-primary">
+                                <i class="bi bi-plus me-2"></i>Add Product
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-0">
+                        <div class="card-body text-center">
+                            <i class="bi bi-list-ul display-4 text-success mb-3"></i>
+                            <h5 class="card-title">View Products</h5>
+                            <p class="card-text text-muted">Manage your product listings</p>
+                            <a asp-controller="Products" asp-action="Index" class="btn btn-success">
+                                <i class="bi bi-eye me-2"></i>View All
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-0">
+                        <div class="card-body text-center">
+                            <i class="bi bi-graph-up display-4 text-info mb-3"></i>
+                            <h5 class="card-title">Analytics</h5>
+                            <p class="card-text text-muted">Track your product performance</p>
+                            <button class="btn btn-info" disabled>
+                                <i class="bi bi-chart-bar me-2"></i>Coming Soon
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (User.IsInRole("Employee"))
+            {
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-0">
+                        <div class="card-body text-center">
+                            <i class="bi bi-people display-4 text-primary mb-3"></i>
+                            <h5 class="card-title">Manage Farmers</h5>
+                            <p class="card-text text-muted">View and manage farmer profiles</p>
+                            <a asp-controller="Employees" asp-action="Index" class="btn btn-primary">
+                                <i class="bi bi-people me-2"></i>View Farmers
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-0">
+                        <div class="card-body text-center">
+                            <i class="bi bi-box-seam display-4 text-success mb-3"></i>
+                            <h5 class="card-title">All Products</h5>
+                            <p class="card-text text-muted">Monitor farmer products</p>
+                            <a asp-controller="Employees" asp-action="FarmerProducts" class="btn btn-success">
+                                <i class="bi bi-box-seam me-2"></i>View Products
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-0">
+                        <div class="card-body text-center">
+                            <i class="bi bi-person-plus display-4 text-info mb-3"></i>
+                            <h5 class="card-title">Add Farmer</h5>
+                            <p class="card-text text-muted">Register new farmers</p>
+                            <a asp-controller="Employees" asp-action="Create" class="btn btn-info">
+                                <i class="bi bi-person-plus me-2"></i>Add Farmer
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Features Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="h4 mb-4"><i class="bi bi-star me-2"></i>Platform Features</h2>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-3">
+            <div class="card h-100 border-0 text-center">
+                <div class="card-body">
+                    <i class="bi bi-shield-check display-4 text-success mb-3"></i>
+                    <h5 class="card-title">Secure Platform</h5>
+                    <p class="card-text text-muted">Your data is protected with enterprise-grade security</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-3">
+            <div class="card h-100 border-0 text-center">
+                <div class="card-body">
+                    <i class="bi bi-lightning display-4 text-warning mb-3"></i>
+                    <h5 class="card-title">Energy Solutions</h5>
+                    <p class="card-text text-muted">Connect with green energy providers</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-3">
+            <div class="card h-100 border-0 text-center">
+                <div class="card-body">
+                    <i class="bi bi-graph-up-arrow display-4 text-primary mb-3"></i>
+                    <h5 class="card-title">Growth Tracking</h5>
+                    <p class="card-text text-muted">Monitor your agricultural progress</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-3">
+            <div class="card h-100 border-0 text-center">
+                <div class="card-body">
+                    <i class="bi bi-people-fill display-4 text-info mb-3"></i>
+                    <h5 class="card-title">Community</h5>
+                    <p class="card-text text-muted">Join a network of sustainable farmers</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Carousel -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-images me-2"></i>Agricultural Showcase</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div id="agriCarousel" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-indicators">
+                            <button type="button" data-bs-target="#agriCarousel" data-bs-slide-to="0" class="active"></button>
+                            <button type="button" data-bs-target="#agriCarousel" data-bs-slide-to="1"></button>
+                            <button type="button" data-bs-target="#agriCarousel" data-bs-slide-to="2"></button>
+                        </div>
+                        <div class="carousel-inner">
+                            <div class="carousel-item active">
+                                <img src="~/images/homeIndex1.jpg" class="d-block w-100" alt="Sustainable Agriculture" style="height: 400px; object-fit: cover;">
+                                <div class="carousel-caption d-none d-md-block">
+                                    <h5>Sustainable Agriculture</h5>
+                                    <p>Promoting eco-friendly farming practices for a better tomorrow.</p>
+                                </div>
+                            </div>
+                            <div class="carousel-item">
+                                <img src="~/images/homeIndex3.jpg" class="d-block w-100" alt="Green Energy" style="height: 400px; object-fit: cover;">
+                                <div class="carousel-caption d-none d-md-block">
+                                    <h5>Green Energy Solutions</h5>
+                                    <p>Connecting farms with renewable energy technologies.</p>
+                                </div>
+                            </div>
+                            <div class="carousel-item">
+                                <img src="~/images/HomeIndex5.jpg" class="d-block w-100" alt="Innovation" style="height: 400px; object-fit: cover;">
+                                <div class="carousel-caption d-none d-md-block">
+                                    <h5>Agricultural Innovation</h5>
+                                    <p>Embracing technology for modern farming solutions.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#agriCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#agriCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+

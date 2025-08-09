@@ -1,0 +1,104 @@
+@model WebApplication2.Models.Product
+
+@using Microsoft.AspNetCore.Identity
+@using WebApplication2.Areas.Identity.Data
+@inject UserManager<WebApplication2User> UserManager
+
+@{
+    ViewData["Title"] = "Add New Product";
+}
+
+<div class="fade-in">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-action="Index" class="text-decoration-none">Products</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Add New Product</li>
+                </ol>
+            </nav>
+            <h1 class="h3 mb-0">
+                <i class="bi bi-plus-circle me-2 text-primary"></i>Add New Product
+            </h1>
+            <p class="text-muted mb-0">Register your agricultural product on the platform</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-box-seam me-2"></i>Product Information
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Create" novalidate>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label fw-semibold">
+                                <i class="bi bi-box me-1"></i>Product Name
+                            </label>
+                            <input asp-for="Name" class="form-control form-control-lg" placeholder="Enter product name" />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                            <div class="form-text">Provide a clear and descriptive name for your product</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Category" class="form-label fw-semibold">
+                                <i class="bi bi-tag me-1"></i>Category
+                            </label>
+                            <select asp-for="Category" asp-items="ViewBag.CategoriesSelectList" class="form-select form-select-lg" id="Category">
+                                <option value="">-- Select a category --</option>
+                            </select>
+                            <span asp-validation-for="Category" class="text-danger small"></span>
+                            <div class="form-text">Choose the category that best describes your product</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="ProductDate" class="form-label fw-semibold">
+                                <i class="bi bi-calendar3 me-1"></i>Production Date
+                            </label>
+                            <input asp-for="ProductDate" type="date" class="form-control form-control-lg" />
+                            <span asp-validation-for="ProductDate" class="text-danger small"></span>
+                            <div class="form-text">When was this product produced or harvested?</div>
+                        </div>
+
+                        <!-- Hidden UserId field -->
+                        <input asp-for="UserId" type="hidden" value="@UserManager.GetUserId(User)" />
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a asp-action="Index" class="btn btn-outline-secondary btn-lg me-md-2">
+                                <i class="bi bi-arrow-left me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-plus-circle me-2"></i>Create Product
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Help Section -->
+            <div class="card border-0 mt-4">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-info-circle me-2 text-info"></i>Tips for Adding Products
+                    </h6>
+                    <ul class="list-unstyled mb-0 small text-muted">
+                        <li class="mb-1"><i class="bi bi-check2 me-2 text-success"></i>Use clear, descriptive names for better visibility</li>
+                        <li class="mb-1"><i class="bi bi-check2 me-2 text-success"></i>Select the most appropriate category</li>
+                        <li class="mb-1"><i class="bi bi-check2 me-2 text-success"></i>Ensure the production date is accurate</li>
+                        <li><i class="bi bi-check2 me-2 text-success"></i>All fields are required for successful registration</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

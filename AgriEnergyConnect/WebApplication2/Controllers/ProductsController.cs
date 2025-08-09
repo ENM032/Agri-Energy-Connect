@@ -1,0 +1,387 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
+using WebApplication2.Areas.Identity.Data;
+using WebApplication2.Data;
+using WebApplication2.Models;
+
+namespace WebApplication2.Controllers
+{
+    // Only shows you this action if youre a employee [Authorize(Roles = "Employee")]
+    // Only shows you this page if youre a farmer [Authorize(Roles = "Farmer")]
+    [Authorize]
+    public class ProductsController : Controller
+    {
+        private readonly WebApplication2Context _context;
+        private readonly UserManager<WebApplication2User> _userManager;
+        private readonly ILogger<ProductsController> _logger;
+        
+        public ProductsController(WebApplication2Context context, UserManager<WebApplication2User> userManager, ILogger<ProductsController> logger)
+        {
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+
+        /// <summary>
+        /// GET: Products - Display user's products
+        /// </summary>
+        public async Task<IActionResult> Index()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    _logger.LogWarning("User ID not found for authenticated user");
+                    return RedirectToAction("Login", "Account");
+                }
+
+                var products = await _context.Products
+                    .Where(x => x.UserId == userId)
+                    .Include(p => p.User)
+                    .OrderByDescending(p => p.ProductDate)
+                    .ToListAsync();
+
+                _logger.LogInformation("Retrieved {ProductCount} products for user {UserId}", products.Count, userId);
+                return View(products);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving products for user");
+                TempData["ErrorMessage"] = "An error occurred while loading your products. Please try again.";
+                return View(new List<Product>());
+            }
+        }
+
+        /// <summary>
+        /// GET: Products/Create - Display create product form
+        /// </summary>
+        public IActionResult Create()
+        {
+            try
+            {
+                ViewBag.CategoriesSelectList = new SelectList(GetCategories(), "Value", "Text");
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading create product form");
+                TempData["ErrorMessage"] = "An error occurred while loading the form. Please try again.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        /// <summary>
+        /// POST: Products/Create - Create new product
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create([Bind("Name,Category,ProductDate")] Product product)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    _logger.LogWarning("User ID not found during product creation");
+                    return RedirectToAction("Login", "Account");
+                }
+
+                // Set the user ID for the product
+                product.UserId = userId;
+
+                // Validate product date is not in the future
+                if (product.ProductDate > DateTime.Now)
+                {
+                    ModelState.AddModelError("ProductDate", "Production date cannot be in the future.");
+                }
+
+                if (ModelState.IsValid)
+                {
+                    _context.Add(product);
+                    await _context.SaveChangesAsync();
+                    
+                    _logger.LogInformation("Product {ProductName} created successfully by user {UserId}", product.Name, userId);
+                    TempData["SuccessMessage"] = "Product created successfully!";
+                    return RedirectToAction(nameof(Index));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating product {ProductName}", product?.Name);
+                ModelState.AddModelError("", "An error occurred while creating the product. Please try again.");
+            }
+
+            ViewBag.CategoriesSelectList = new SelectList(GetCategories(), "Value", "Text", product.Category);
+            return View(product);
+        }
+
+        /// <summary>
+        /// GET: Products/Edit/5 - Display edit product form
+        /// </summary>
+        public async Task<IActionResult> Edit(int? id)
+        {
+            try
+            {
+                if (id == null)
+                {
+                    _logger.LogWarning("Edit attempted with null ID");
+                    return NotFound();
+                }
+
+                var userId = GetCurrentUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    _logger.LogWarning("User ID not found during product edit");
+                    return RedirectToAction("Login", "Account");
+                }
+
+                var product = await _context.Products.FindAsync(id);
+                if (product == null)
+                {
+                    _logger.LogWarning("Product with ID {ProductId} not found", id);
+                    return NotFound();
+                }
+
+                // Ensure user can only edit their own products
+                if (product.UserId != userId)
+                {
+                    _logger.LogWarning("User {UserId} attempted to edit product {ProductId} belonging to another user", userId, id);
+                    TempData["ErrorMessage"] = "You can only edit your own products.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                ViewBag.CategoriesSelectList = new SelectList(GetCategories(), "Value", "Text", product.Category);
+                return View(product);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading edit form for product {ProductId}", id);
+                TempData["ErrorMessage"] = "An error occurred while loading the product. Please try again.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        /// <summary>
+        /// POST: Products/Edit/5 - Update product
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Category,ProductDate,UserId")] Product product)
+        {
+            try
+            {
+                if (id != product.Id)
+                {
+                    _logger.LogWarning("Product ID mismatch: URL ID {UrlId}, Product ID {ProductId}", id, product.Id);
+                    return NotFound();
+                }
+
+                var userId = GetCurrentUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    _logger.LogWarning("User ID not found during product update");
+                    return RedirectToAction("Login", "Account");
+                }
+
+                // Ensure user can only edit their own products
+                if (product.UserId != userId)
+                {
+                    _logger.LogWarning("User {UserId} attempted to update product {ProductId} belonging to another user", userId, id);
+                    TempData["ErrorMessage"] = "You can only edit your own products.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Validate product date is not in the future
+                if (product.ProductDate > DateTime.Now)
+                {
+                    ModelState.AddModelError("ProductDate", "Production date cannot be in the future.");
+                }
+
+                if (ModelState.IsValid)
+                {
+                    try
+                    {
+                        _context.Update(product);
+                        await _context.SaveChangesAsync();
+                        
+                        _logger.LogInformation("Product {ProductName} updated successfully by user {UserId}", product.Name, userId);
+                        TempData["SuccessMessage"] = "Product updated successfully!";
+                        return RedirectToAction(nameof(Index));
+                    }
+                    catch (DbUpdateConcurrencyException ex)
+                    {
+                        if (!ProductExists(product.Id))
+                        {
+                            _logger.LogWarning("Product {ProductId} no longer exists during update", product.Id);
+                            return NotFound();
+                        }
+                        else
+                        {
+                            _logger.LogError(ex, "Concurrency error updating product {ProductId}", product.Id);
+                            ModelState.AddModelError("", "The product was modified by another user. Please reload and try again.");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating product {ProductId}", id);
+                ModelState.AddModelError("", "An error occurred while updating the product. Please try again.");
+            }
+
+            ViewBag.CategoriesSelectList = new SelectList(GetCategories(), "Value", "Text", product.Category);
+            //ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id", product.UserId);
+            return View(product);
+        }
+
+        /// <summary>
+        /// GET: Products/Delete/5 - Display delete confirmation
+        /// </summary>
+        public async Task<IActionResult> Delete(int? id)
+        {
+            try
+            {
+                if (id == null || _context.Products == null)
+                {
+                    _logger.LogWarning("Delete attempted with null ID or context");
+                    return NotFound();
+                }
+
+                var userId = GetCurrentUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    _logger.LogWarning("User ID not found during product delete");
+                    return RedirectToAction("Login", "Account");
+                }
+
+                var product = await _context.Products
+                    .FirstOrDefaultAsync(m => m.Id == id);
+                if (product == null)
+                {
+                    _logger.LogWarning("Product with ID {ProductId} not found for deletion", id);
+                    return NotFound();
+                }
+
+                // Ensure user can only delete their own products
+                if (product.UserId != userId)
+                {
+                    _logger.LogWarning("User {UserId} attempted to delete product {ProductId} belonging to another user", userId, id);
+                    TempData["ErrorMessage"] = "You can only delete your own products.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                return View(product);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading delete confirmation for product {ProductId}", id);
+                TempData["ErrorMessage"] = "An error occurred while loading the product. Please try again.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        /// <summary>
+        /// POST: Products/Delete/5 - Confirm product deletion
+        /// </summary>
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            try
+            {
+                if (_context.Products == null)
+                {
+                    _logger.LogError("Product context is null during deletion");
+                    return Problem("Entity set 'WebApplication2Context.Products' is null.");
+                }
+
+                var userId = GetCurrentUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    _logger.LogWarning("User ID not found during product deletion");
+                    return RedirectToAction("Login", "Account");
+                }
+
+                var product = await _context.Products.FindAsync(id);
+                if (product == null)
+                {
+                    _logger.LogWarning("Product with ID {ProductId} not found for deletion", id);
+                    TempData["ErrorMessage"] = "Product not found.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Ensure user can only delete their own products
+                if (product.UserId != userId)
+                {
+                    _logger.LogWarning("User {UserId} attempted to delete product {ProductId} belonging to another user", userId, id);
+                    TempData["ErrorMessage"] = "You can only delete your own products.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                _context.Products.Remove(product);
+                await _context.SaveChangesAsync();
+                
+                _logger.LogInformation("Product {ProductName} deleted successfully by user {UserId}", product.Name, userId);
+                TempData["SuccessMessage"] = "Product deleted successfully!";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting product {ProductId}", id);
+                TempData["ErrorMessage"] = "An error occurred while deleting the product. Please try again.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        private bool ProductExists(int id)
+        {
+            return _context.Products.Any(e => e.Id == id);
+        }
+
+        // Removed PopulateLocalUserIdVariable method - use GetCurrentUserId() instead
+
+        /// <summary>
+        /// Get the current user's ID with null checking
+        /// </summary>
+        /// <returns>Current user ID or null if not found</returns>
+        private string GetCurrentUserId()
+        {
+            try
+            {
+                return _userManager.GetUserId(this.User);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving current user ID");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Get available product categories
+        /// </summary>
+        /// <returns>List of category options for dropdown</returns>
+        public static List<SelectListItem> GetCategories()
+        {
+            return new List<SelectListItem>
+            {
+                new SelectListItem { Value = "Cereals", Text = "Cereals" },
+                new SelectListItem { Value = "Seeds", Text = "Seeds" },
+                new SelectListItem { Value = "Pulses", Text = "Pulses" },
+                new SelectListItem { Value = "Fruits", Text = "Fruits" },
+                new SelectListItem { Value = "Vegetables", Text = "Vegetables" },
+                new SelectListItem { Value = "Herbs & Spices", Text = "Herbs & Spices" }
+            };
+        }
+    }
+}
