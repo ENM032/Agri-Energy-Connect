@@ -1,30 +1,26 @@
-@* Enhanced Login Page with Modern UI *@
-
 @page
 @model LoginModel
 
 @{
-    ViewData["Title"] = "Welcome Back";
-    Layout = "_Layout";
+    ViewData["Title"] = "Sign In";
 }
 
-<div class="auth-container">
-    <div class="auth-card">
-        <div class="auth-header">
-            <div class="auth-logo">
-                <i class="fas fa-leaf"></i>
-            </div>
-            <h1 class="auth-title">Welcome Back</h1>
-            <p class="auth-subtitle">Sign in to your AgriEnergyConnect account</p>
+<div class="auth-card">
+    <div class="auth-header">
+        <div class="auth-logo">
+            <i class="bi bi-leaf"></i>
         </div>
-        
-        <div class="auth-body">
+        <h1 class="auth-title">Welcome Back</h1>
+        <p class="auth-subtitle">Sign in to your AgriEnergyConnect account</p>
+    </div>
+    
+    <div class="auth-body-content">
             <form id="account" method="post">
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
                 
                 <div class="form-group">
                     <label asp-for="Input.Email" class="form-label">
-                        <i class="fas fa-envelope"></i> Email Address
+                        <i class="bi bi-envelope"></i> Email Address
                     </label>
                     <input asp-for="Input.Email" class="form-control auth-input" autocomplete="username" aria-required="true" placeholder="Enter your email" />
                     <span asp-validation-for="Input.Email" class="text-danger"></span>
@@ -32,12 +28,12 @@
                 
                 <div class="form-group">
                     <label asp-for="Input.Password" class="form-label">
-                        <i class="fas fa-lock"></i> Password
+                        <i class="bi bi-lock"></i> Password
                     </label>
                     <div class="password-input-container">
                         <input asp-for="Input.Password" class="form-control auth-input" autocomplete="current-password" aria-required="true" placeholder="Enter your password" type="password" id="passwordInput" />
                         <button type="button" class="password-toggle" onclick="togglePassword()">
-                            <i class="fas fa-eye" id="passwordToggleIcon"></i>
+                            <i class="bi bi-eye" id="passwordToggleIcon"></i>
                         </button>
                     </div>
                     <span asp-validation-for="Input.Password" class="text-danger"></span>
@@ -52,7 +48,7 @@
                 </div>
                 
                 <button id="login-submit" type="submit" class="btn auth-btn">
-                    <i class="fas fa-sign-in-alt"></i> Sign In
+                    <i class="bi bi-box-arrow-in-right"></i> Sign In
                 </button>
                 
                 <div class="auth-divider">
@@ -73,10 +69,10 @@
             </form>
         </div>
     </div>
-</div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js" integrity="sha512-rstIgDs0xPgmG6RX1Aba4KV5cWJbAMcvRCVmglpam9SoHZiUCyQVDdH2LPlxoHtrv17XWblE/V/PP+Tr04hbtA==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/4.0.0/jquery.validate.unobtrusive.min.js" integrity="sha512-xq+Vm8jC94ynOikewaQXMEkJIOBp7iArs3IhFWSWdRT3Pq8wFz46p+ZDFAR7kHnSFf+zUv52B3prRYnbDRdgog==" crossorigin="anonymous"></script>
     <script src="~/js/auth.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 }

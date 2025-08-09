@@ -11,7 +11,6 @@ A comprehensive web platform that enables collaboration between energy providers
 - [Running the Application](#running-the-application)
 - [Application Screenshots](#application-screenshots)
 - [Project Structure](#project-structure)
-- [Contributing](#contributing)
 
 ## 🌟 Overview
 
@@ -159,8 +158,6 @@ The application automatically seeds two roles:
 <!-- ![Product List](assets/screenshots/product-list.png) -->
 <!-- ![Add Product](assets/screenshots/add-product.png) -->
 
-> **Note**: To add screenshots, create an `assets/screenshots/` folder in the project root and place your images there. Then uncomment and update the image paths above.
-
 ## 📁 Project Structure
 
 ```
@@ -178,18 +175,5 @@ AgriEnergyConnect/
 ├── SQL Preloads/             # Database initialization scripts
 └── README.md                 # Project documentation
 ```
-
-## 🤝 Contributing
-
-This project was developed as part of a 3rd year university module. While it serves as a prototype, contributions and improvements are welcome.
-
-### Development Guidelines
-- Follow C# coding conventions
-- Implement proper error handling
-- Add unit tests for new features
-- Update documentation for significant changes
-- Ensure security best practices
-
 ---
 
-**Developed with ❤️ using ASP.NET Core and modern web technologies**

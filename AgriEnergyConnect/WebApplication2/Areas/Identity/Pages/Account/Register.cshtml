@@ -1,30 +1,26 @@
-@* Enhanced Registration Page with Modern UI *@
-
 @page
 @model RegisterModel
 @{
     ViewData["Title"] = "Create Account";
-    Layout = "_Layout";
 }
 
-<div class="auth-container">
-    <div class="auth-card register-card">
-        <div class="auth-header">
-            <div class="auth-logo">
-                <i class="fas fa-leaf"></i>
-            </div>
-            <h1 class="auth-title">Join AgriEnergyConnect</h1>
-            <p class="auth-subtitle">Create your account to get started</p>
+<div class="auth-card register-card">
+    <div class="auth-header">
+        <div class="auth-logo">
+            <i class="bi bi-leaf"></i>
         </div>
-        
-        <div class="auth-body">
+        <h1 class="auth-title">Join AgriEnergyConnect</h1>
+        <p class="auth-subtitle">Create your account to get started</p>
+    </div>
+    
+    <div class="auth-body-content">
             <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
                 
                 <div class="form-row">
                     <div class="form-group">
                         <label asp-for="Input.Email" class="form-label">
-                            <i class="fas fa-envelope"></i> Email Address <span class="required">*</span>
+                            <i class="bi bi-envelope"></i> Email Address <span class="required">*</span>
                         </label>
                         <input asp-for="Input.Email" class="form-control auth-input" autocomplete="username" aria-required="true" placeholder="Enter your email" />
                         <span asp-validation-for="Input.Email" class="text-danger"></span>
@@ -32,7 +28,7 @@
                     
                     <div class="form-group">
                         <label asp-for="Input.DisplayName" class="form-label">
-                            <i class="fas fa-user"></i> Display Name
+                            <i class="bi bi-person"></i> Display Name
                         </label>
                         <input asp-for="Input.DisplayName" class="form-control auth-input" autocomplete="name" aria-required="true" placeholder="Enter your display name" />
                         <span asp-validation-for="Input.DisplayName" class="text-danger"></span>
@@ -42,12 +38,12 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label asp-for="Input.Password" class="form-label">
-                            <i class="fas fa-lock"></i> Password <span class="required">*</span>
+                            <i class="bi bi-lock"></i> Password <span class="required">*</span>
                         </label>
                         <div class="password-input-container">
                             <input asp-for="Input.Password" class="form-control auth-input" autocomplete="new-password" aria-required="true" placeholder="Create a password" type="password" id="passwordInput" />
                             <button type="button" class="password-toggle" onclick="togglePassword('passwordInput', 'passwordToggleIcon')">
-                                <i class="fas fa-eye" id="passwordToggleIcon"></i>
+                                <i class="bi bi-eye" id="passwordToggleIcon"></i>
                             </button>
                         </div>
                         <div class="password-strength">
@@ -61,22 +57,21 @@
                     
                     <div class="form-group">
                         <label asp-for="Input.ConfirmPassword" class="form-label">
-                            <i class="fas fa-lock"></i> Confirm Password <span class="required">*</span>
+                            <i class="bi bi-lock"></i> Confirm Password <span class="required">*</span>
                         </label>
                         <div class="password-input-container">
                             <input asp-for="Input.ConfirmPassword" class="form-control auth-input" autocomplete="new-password" aria-required="true" placeholder="Confirm your password" type="password" id="confirmPasswordInput" />
                             <button type="button" class="password-toggle" onclick="togglePassword('confirmPasswordInput', 'confirmPasswordToggleIcon')">
-                                <i class="fas fa-eye" id="confirmPasswordToggleIcon"></i>
+                                <i class="bi bi-eye" id="confirmPasswordToggleIcon"></i>
                             </button>
                         </div>
                         <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
                     </div>
                 </div>
                 
-                @* Role selection with enhanced styling *@
                 <div class="form-group">
                     <label asp-for="Input.Role" class="form-label">
-                        <i class="fas fa-users"></i> Account Type <span class="required">*</span>
+                        <i class="bi bi-people"></i> Account Type <span class="required">*</span>
                     </label>
                     <select asp-for="Input.Role" class="form-control auth-select" asp-items="@Model.Input.RolesList" aria-required="true">
                         <option value="" disabled selected>Choose your account type</option>
@@ -93,7 +88,7 @@
                 </div>
                 
                 <button id="registerSubmit" type="submit" class="btn auth-btn">
-                    <i class="fas fa-user-plus"></i> Create Account
+                    <i class="bi bi-person-plus"></i> Create Account
                 </button>
                 
                 <div class="auth-divider">
@@ -111,10 +106,10 @@
             </form>
         </div>
     </div>
-</div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js" integrity="sha512-rstIgDs0xPgmG6RX1Aba4KV5cWJbAMcvRCVmglpam9SoHZiUCyQVDdH2LPlxoHtrv17XWblE/V/PP+Tr04hbtA==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/4.0.0/jquery.validate.unobtrusive.min.js" integrity="sha512-xq+Vm8jC94ynOikewaQXMEkJIOBp7iArs3IhFWSWdRT3Pq8wFz46p+ZDFAR7kHnSFf+zUv52B3prRYnbDRdgog==" crossorigin="anonymous"></script>
     <script src="~/js/auth.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 }

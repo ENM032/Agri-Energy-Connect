@@ -2,28 +2,23 @@
 
 // Password toggle functionality
 function togglePassword(inputId, iconId) {
+    // Handle default parameters if not provided
+    if (!inputId) inputId = 'passwordInput';
+    if (!iconId) iconId = 'passwordToggleIcon';
+    
     const passwordInput = document.getElementById(inputId);
     const toggleIcon = document.getElementById(iconId);
     
     if (passwordInput && toggleIcon) {
         if (passwordInput.type === 'password') {
             passwordInput.type = 'text';
-            toggleIcon.classList.remove('fa-eye');
-            toggleIcon.classList.add('fa-eye-slash');
+            toggleIcon.classList.remove('bi-eye');
+            toggleIcon.classList.add('bi-eye-slash');
         } else {
             passwordInput.type = 'password';
-            toggleIcon.classList.remove('fa-eye-slash');
-            toggleIcon.classList.add('fa-eye');
+            toggleIcon.classList.remove('bi-eye-slash');
+            toggleIcon.classList.add('bi-eye');
         }
-    }
-}
-
-// Legacy support for single parameter
-function togglePassword() {
-    if (arguments.length === 0) {
-        togglePassword('passwordInput', 'passwordToggleIcon');
-    } else {
-        togglePassword(arguments[0], arguments[1]);
     }
 }
 
@@ -286,15 +281,15 @@ document.addEventListener('DOMContentLoaded', function() {
 // Add CSS for validation states
 const validationStyles = `
     .auth-input.is-valid {
-        border-color: #28a745;
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='m2.3 6.73.94-.94 1.44 1.44L7.4 4.5l.94.94L4.66 9.2z'/%3e%3c/svg%3e");
+        border-color: var(--accent-color);
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%237fdd6e' d='m2.3 6.73.94-.94 1.44 1.44L7.4 4.5l.94.94L4.66 9.2z'/%3e%3c/svg%3e");
         background-repeat: no-repeat;
         background-position: right calc(0.375em + 0.1875rem) center;
         background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
     }
     
     .auth-input.is-invalid {
-        border-color: #dc3545;
+        border-color: var(--danger-color);
         background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 4.6 2.4 2.4m0-2.4L5.8 7'/%3e%3c/svg%3e");
         background-repeat: no-repeat;
         background-position: right calc(0.375em + 0.1875rem) center;
