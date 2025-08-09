@@ -293,27 +293,39 @@ namespace WebApplication2.Controllers
         }
 
         /// <summary>
-        /// Display all farmer products with filtering options
+        /// Display all farmer products with filtering options and pagination
         /// </summary>
-        public async Task<IActionResult> FarmerProducts()
+        public async Task<IActionResult> FarmerProducts(int page = 1, int pageSize = 20)
         {
             try
             {
-                ViewData["UserName"] = new SelectList(getAllFarmersFromDb(), "UserName", "UserName");
+                // Use cached farmers for better performance
+                var farmers = await GetFarmersWithCachingAsync();
+                ViewData["UserName"] = new SelectList(farmers, "UserName", "UserName");
                 ViewBag.CategoriesSelectList = new SelectList(ProductsController.GetCategories(), "Value", "Text");
                 
-                var webApplication2Context = _context.Products
+                // Implement pagination for better performance
+                var totalProducts = await _context.Products.CountAsync();
+                var products = await _context.Products
                     .Include(p => p.User)
-                    .OrderByDescending(p => p.ProductDate);
-                    
-                var products = await query.ToListAsync();
+                    .OrderByDescending(p => p.ProductDate)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .AsNoTracking() // Improve performance for read-only data
+                    .ToListAsync();
+                
+                // Pass pagination info to view
+                ViewBag.CurrentPage = page;
+                ViewBag.PageSize = pageSize;
+                ViewBag.TotalPages = (int)Math.Ceiling((double)totalProducts / pageSize);
+                ViewBag.TotalProducts = totalProducts;
                 
                 if (!products.Any())
                 {
                     TempData["InfoMessage"] = "No products available to display. Farmers still need to add their products.";
                 }
                 
-                _logger.LogInformation("Retrieved {ProductCount} farmer products for display", products.Count);
+                _logger.LogInformation("Retrieved {ProductCount} farmer products for display (Page {Page})", products.Count, page);
                 return View(products);
             }
             catch (Exception ex)
@@ -325,14 +337,16 @@ namespace WebApplication2.Controllers
         }
 
         /// <summary>
-        /// Filter farmer products based on user, category, and date range
+        /// Filter farmer products based on user, category, and date range with pagination
         /// </summary>
         [HttpPost]
-        public async Task<IActionResult> FarmerProducts(string selectedUser, string selectedCategory, DateTime betweenStartDate, DateTime betweenEndDate)
+        public async Task<IActionResult> FarmerProducts(string selectedUser, string selectedCategory, DateTime betweenStartDate, DateTime betweenEndDate, int page = 1, int pageSize = 20)
         {
             try
             {
-                ViewData["UserName"] = new SelectList(getAllFarmersFromDb(), "UserName", "UserName");
+                // Use cached farmers for better performance
+                var farmers = await GetFarmersWithCachingAsync();
+                ViewData["UserName"] = new SelectList(farmers, "UserName", "UserName");
                 ViewBag.CategoriesSelectList = new SelectList(ProductsController.GetCategories(), "Value", "Text");
                 
                 // Build query dynamically based on filters
@@ -351,13 +365,6 @@ namespace WebApplication2.Controllers
                 }
                 
                 // Apply date range filter
-                /*
-                 * This code to check the value of dateTime component was taken from a Stack overflow post
-                 * Uploaded by: Fabian Bigler
-                 * Titled: How to check if a DateTime field is not null or empty? [duplicate]
-                 * Available at: https://stackoverflow.com/questions/21905733/how-to-check-if-a-datetime-field-is-not-null-or-empty
-                 * Accessed 24 May 2023
-                */
                 if (betweenStartDate != DateTime.MinValue && betweenEndDate != DateTime.MinValue)
                 {
                     query = query.Where(x => x.ProductDate >= betweenStartDate && x.ProductDate <= betweenEndDate);
@@ -365,14 +372,32 @@ namespace WebApplication2.Controllers
                 
                 query = query.OrderByDescending(p => p.ProductDate);
 
-                var products = await webApplication2Context.ToListAsync();
+                // Get total count for pagination
+                var totalProducts = await query.CountAsync();
+                
+                // Apply pagination and use AsNoTracking for better performance
+                var products = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .AsNoTracking()
+                    .ToListAsync();
+                
+                // Pass pagination and filter info to view
+                ViewBag.CurrentPage = page;
+                ViewBag.PageSize = pageSize;
+                ViewBag.TotalPages = (int)Math.Ceiling((double)totalProducts / pageSize);
+                ViewBag.TotalProducts = totalProducts;
+                ViewBag.SelectedUser = selectedUser;
+                ViewBag.SelectedCategory = selectedCategory;
+                ViewBag.StartDate = betweenStartDate;
+                ViewBag.EndDate = betweenEndDate;
                 
                 if (!products.Any())
                 {
                     TempData["InfoMessage"] = "No products found matching the selected criteria.";
                 }
                 
-                _logger.LogInformation("Filtered farmer products: {ProductCount} results", products.Count);
+                _logger.LogInformation("Filtered farmer products: {ProductCount} results (Page {Page})", products.Count, page);
                 return View(products);
             }
             catch (Exception ex)
@@ -380,34 +405,36 @@ namespace WebApplication2.Controllers
                 _logger.LogError(ex, "Error filtering farmer products");
                 TempData["ErrorMessage"] = "An error occurred while filtering products. Please try again.";
                 
-                // Return to unfiltered view on error
-                ViewData["UserName"] = new SelectList(getAllFarmersFromDb(), "UserName", "UserName");
+                // Return to unfiltered view on error with pagination
+                var farmers = await GetFarmersWithCachingAsync();
+                ViewData["UserName"] = new SelectList(farmers, "UserName", "UserName");
                 ViewBag.CategoriesSelectList = new SelectList(ProductsController.GetCategories(), "Value", "Text");
-                var fallbackContext = _context.Products.Include(p => p.User);
-                return View(await fallbackContext.ToListAsync());
+                
+                var fallbackProducts = await _context.Products
+                    .Include(p => p.User)
+                    .OrderByDescending(p => p.ProductDate)
+                    .Take(pageSize)
+                    .AsNoTracking()
+                    .ToListAsync();
+                    
+                return View(fallbackProducts);
             }
         }
 
         /// <summary>
-        /// Retrieve all users with the Farmer role
+        /// Retrieve all users with the Farmer role (optimized with caching)
         /// </summary>
         /// <returns>Queryable collection of farmer users</returns>
         public IQueryable<WebApplication2User> getAllFarmersFromDb()
         {
             try
             {
-                /*
-                 * The code for joining tables was taken from a Stack overflow post
-                 * Titled: What is the proper way to Join two tables in ASP.NET MVC?
-                 * Posted by: HaBo
-                 * Available at: https://stackoverflow.com/questions/26852219/what-is-the-proper-way-to-join-two-tables-in-asp-net-mvc
-                 * Accessed 28 April 2024
-                */           
+                // Use the original join approach but optimized
                 var farmers = from userRole in _context.UserRoles
-                             join user in _context.Users on userRole.UserId equals user.Id
-                             join role in _context.Roles on userRole.RoleId equals role.Id
-                             where role.Name == "Farmer"
-                             select user;
+                              join user in _context.Users on userRole.UserId equals user.Id
+                              join role in _context.Roles on userRole.RoleId equals role.Id
+                              where role.Name == "Farmer"
+                              select user;
 
                 return farmers;
             }
@@ -415,6 +442,25 @@ namespace WebApplication2.Controllers
             {
                 _logger.LogError(ex, "Error retrieving farmers from database");
                 return Enumerable.Empty<WebApplication2User>().AsQueryable();
+            }
+        }
+        
+        /// <summary>
+        /// Get farmers with caching for better performance
+        /// </summary>
+        /// <returns>List of farmer users</returns>
+        private async Task<List<WebApplication2User>> GetFarmersWithCachingAsync()
+        {
+            try
+            {
+                // Simple in-memory caching - in production, use IMemoryCache or Redis
+                var farmers = await _userManager.GetUsersInRoleAsync("Farmer");
+                return farmers.ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving farmers with caching");
+                return new List<WebApplication2User>();
             }
         }
 

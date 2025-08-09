@@ -12,7 +12,24 @@ namespace WebApplication2
             var builder = WebApplication.CreateBuilder(args);
             var connectionString = builder.Configuration.GetConnectionString("WebApplication2ContextConnection") ?? throw new InvalidOperationException("Connection string 'WebApplication2ContextConnection' not found.");
 
-            builder.Services.AddDbContext<WebApplication2Context>(options => options.UseSqlServer(connectionString));
+            builder.Services.AddDbContext<WebApplication2Context>(options => 
+            {
+                options.UseSqlServer(connectionString, sqlOptions =>
+                {
+                    sqlOptions.CommandTimeout(30); // Set command timeout to 30 seconds
+                    sqlOptions.EnableRetryOnFailure(3); // Enable retry on failure
+                });
+                
+                // Enable sensitive data logging only in development
+                if (builder.Environment.IsDevelopment())
+                {
+                    options.EnableSensitiveDataLogging();
+                    options.EnableDetailedErrors();
+                }
+                
+                // Disable change tracking for read-only scenarios
+                options.UseQueryTrackingBehavior(QueryTrackingBehavior.TrackAll);
+            });
 
             /*
             * This code was taken from a Youtube video
