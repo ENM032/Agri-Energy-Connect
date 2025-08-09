@@ -1,54 +1,120 @@
-﻿@page
+@* Enhanced Registration Page with Modern UI *@
+
+@page
 @model RegisterModel
 @{
-    ViewData["Title"] = "Register";
+    ViewData["Title"] = "Create Account";
+    Layout = "_Layout";
 }
 
-<h1>@ViewData["Title"]</h1>
-
-<div class="row">
-    <div class="col-md-4">
-        <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
-            <h2>Create a new account.</h2>
-            <hr />
-            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                <label asp-for="Input.Email">Email<span class="text-danger"> * </span></label>
-                <span asp-validation-for="Input.Email" class="text-danger"></span>
+<div class="auth-container">
+    <div class="auth-card register-card">
+        <div class="auth-header">
+            <div class="auth-logo">
+                <i class="fas fa-leaf"></i>
             </div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.DisplayName" class="form-control" autocomplete="Displayname" aria-required="true" placeholder="yourname" />
-                <label asp-for="Input.DisplayName">Display Name</label>
-                <span asp-validation-for="Input.DisplayName " class="text-danger"></span>
-            </div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label asp-for="Input.Password">Password<span class="text-danger"> * </span></label>
-                <span asp-validation-for="Input.Password" class="text-danger"></span>
-            </div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label asp-for="Input.ConfirmPassword">Confirm Password<span class="text-danger"> * </span></label>
-                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
-            </div>
-            @* This code was taken from a Youtube video
-            Uploaded by: Macro Code
-            Titled: ASP.NET Core 7.0 Role Based Authorization || How to Implement Roles Based Authorization
-            Available at: https://www.youtube.com/watch?v=VZgxKbAdbbo
-            Accessed 24 May 2023 *@
-            <div class="form-floating mb-3">
-                <select asp-for="Input.Role" class="form-select" asp-items="@Model.Input.RolesList" aria-required="true" >
-                    <option disabled selected>Click me</option>
-                </select>
-                <label asp-for="Input.Role">Select Role<span class="text-danger"> * </span></label>
-                <span asp-validation-for="Input.Role" class="text-danger"></span>
-            </div>
-            <button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-formpurple">Register</button>
-        </form>
+            <h1 class="auth-title">Join AgriEnergyConnect</h1>
+            <p class="auth-subtitle">Create your account to get started</p>
+        </div>
+        
+        <div class="auth-body">
+            <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label asp-for="Input.Email" class="form-label">
+                            <i class="fas fa-envelope"></i> Email Address <span class="required">*</span>
+                        </label>
+                        <input asp-for="Input.Email" class="form-control auth-input" autocomplete="username" aria-required="true" placeholder="Enter your email" />
+                        <span asp-validation-for="Input.Email" class="text-danger"></span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label asp-for="Input.DisplayName" class="form-label">
+                            <i class="fas fa-user"></i> Display Name
+                        </label>
+                        <input asp-for="Input.DisplayName" class="form-control auth-input" autocomplete="name" aria-required="true" placeholder="Enter your display name" />
+                        <span asp-validation-for="Input.DisplayName" class="text-danger"></span>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label asp-for="Input.Password" class="form-label">
+                            <i class="fas fa-lock"></i> Password <span class="required">*</span>
+                        </label>
+                        <div class="password-input-container">
+                            <input asp-for="Input.Password" class="form-control auth-input" autocomplete="new-password" aria-required="true" placeholder="Create a password" type="password" id="passwordInput" />
+                            <button type="button" class="password-toggle" onclick="togglePassword('passwordInput', 'passwordToggleIcon')">
+                                <i class="fas fa-eye" id="passwordToggleIcon"></i>
+                            </button>
+                        </div>
+                        <div class="password-strength">
+                            <div class="strength-meter">
+                                <div class="strength-bar" id="strengthBar"></div>
+                            </div>
+                            <span class="strength-text" id="strengthText">Password strength</span>
+                        </div>
+                        <span asp-validation-for="Input.Password" class="text-danger"></span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label asp-for="Input.ConfirmPassword" class="form-label">
+                            <i class="fas fa-lock"></i> Confirm Password <span class="required">*</span>
+                        </label>
+                        <div class="password-input-container">
+                            <input asp-for="Input.ConfirmPassword" class="form-control auth-input" autocomplete="new-password" aria-required="true" placeholder="Confirm your password" type="password" id="confirmPasswordInput" />
+                            <button type="button" class="password-toggle" onclick="togglePassword('confirmPasswordInput', 'confirmPasswordToggleIcon')">
+                                <i class="fas fa-eye" id="confirmPasswordToggleIcon"></i>
+                            </button>
+                        </div>
+                        <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+                    </div>
+                </div>
+                
+                @* Role selection with enhanced styling *@
+                <div class="form-group">
+                    <label asp-for="Input.Role" class="form-label">
+                        <i class="fas fa-users"></i> Account Type <span class="required">*</span>
+                    </label>
+                    <select asp-for="Input.Role" class="form-control auth-select" asp-items="@Model.Input.RolesList" aria-required="true">
+                        <option value="" disabled selected>Choose your account type</option>
+                    </select>
+                    <span asp-validation-for="Input.Role" class="text-danger"></span>
+                </div>
+                
+                <div class="form-group terms-group">
+                    <label class="custom-checkbox">
+                        <input type="checkbox" id="termsCheckbox" required />
+                        <span class="checkmark"></span>
+                        I agree to the <a href="#" class="auth-link">Terms of Service</a> and <a href="#" class="auth-link">Privacy Policy</a>
+                    </label>
+                </div>
+                
+                <button id="registerSubmit" type="submit" class="btn auth-btn">
+                    <i class="fas fa-user-plus"></i> Create Account
+                </button>
+                
+                <div class="auth-divider">
+                    <span>or</span>
+                </div>
+                
+                <div class="auth-links">
+                    <p class="signup-link">
+                        Already have an account?
+                        <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl" class="auth-link">
+                            Sign In
+                        </a>
+                    </p>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/auth.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 }
