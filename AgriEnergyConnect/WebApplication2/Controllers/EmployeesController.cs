@@ -1,17 +1,10 @@
-using Humanizer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
-using System.Data;
-using System.Net;
 using WebApplication2.Areas.Identity.Data;
 using WebApplication2.Data;
 using WebApplication2.Models;
@@ -313,7 +306,7 @@ namespace WebApplication2.Controllers
                     .Include(p => p.User)
                     .OrderByDescending(p => p.ProductDate);
                     
-                var products = await webApplication2Context.ToListAsync();
+                var products = await query.ToListAsync();
                 
                 if (!products.Any())
                 {
@@ -341,56 +334,36 @@ namespace WebApplication2.Controllers
             {
                 ViewData["UserName"] = new SelectList(getAllFarmersFromDb(), "UserName", "UserName");
                 ViewBag.CategoriesSelectList = new SelectList(ProductsController.GetCategories(), "Value", "Text");
-                var webApplication2Context = _context.Products.Include(p => p.User);
-
-            if (selectedUser != null && selectedCategory == null && betweenEndDate == DateTime.MinValue && betweenEndDate == DateTime.MinValue)
-            {
-                webApplication2Context = _context.Products.Where(x => x.User.UserName == selectedUser).Include(p => p.User);
-            }
-            if(selectedUser == null && selectedCategory != null && betweenEndDate == DateTime.MinValue && betweenEndDate == DateTime.MinValue)
-            {
-                webApplication2Context = _context.Products.Where(x => x.Category == selectedCategory).Include(p => p.User);
-            }
-            /*
-             * This code to check the value of dateTime component was taken from a Stack overflow post
-             * Uploaded by: Fabian Bigler
-             * Titled: How to check if a DateTime field is not null or empty? [duplicate]
-             * Available at: https://stackoverflow.com/questions/21905733/how-to-check-if-a-datetime-field-is-not-null-or-empty
-             * Accessed 24 May 2023
-            */
-            if (selectedUser == null && selectedCategory == null && betweenEndDate != DateTime.MinValue && betweenEndDate != DateTime.MinValue)
-            {
-                webApplication2Context = _context.Products.Where(x => x.ProductDate >= betweenStartDate && x.ProductDate <= betweenEndDate).Include(p => p.User);
-            }
-
-            if (selectedUser != null && selectedCategory != null && betweenEndDate == DateTime.MinValue && betweenEndDate == DateTime.MinValue)
-            {
-                webApplication2Context = _context.Products.Where(x => x.User.UserName == selectedUser
-                    && x.Category == selectedCategory)
-                        .Include(p => p.User);
-            }
-            if (selectedUser != null && selectedCategory == null && betweenEndDate != DateTime.MinValue && betweenEndDate != DateTime.MinValue)
-            {
-                webApplication2Context = _context.Products.Where(x => x.User.UserName == selectedUser
-                     && x.ProductDate >= betweenStartDate
-                            && x.ProductDate <= betweenEndDate)
-                                .Include(p => p.User);
-            }
-            if (selectedUser == null && selectedCategory != null && betweenEndDate != DateTime.MinValue && betweenEndDate != DateTime.MinValue)
-            {
-                webApplication2Context = _context.Products.Where(x => x.Category == selectedCategory
-                     && x.ProductDate >= betweenStartDate
-                            && x.ProductDate <= betweenEndDate)
-                                .Include(p => p.User);
-            }
-            if (selectedUser != null && selectedCategory != null && betweenEndDate != DateTime.MinValue && betweenEndDate != DateTime.MinValue)
-            {
-                webApplication2Context = _context.Products.Where(x => x.User.UserName == selectedUser
-                    && x.Category == selectedCategory
-                        && x.ProductDate >= betweenStartDate
-                            && x.ProductDate <= betweenEndDate)
-                                .Include(p => p.User);
-            }
+                
+                // Build query dynamically based on filters
+                var query = _context.Products.Include(p => p.User).AsQueryable();
+                
+                // Apply user filter
+                if (!string.IsNullOrEmpty(selectedUser))
+                {
+                    query = query.Where(x => x.User.UserName == selectedUser);
+                }
+                
+                // Apply category filter
+                if (!string.IsNullOrEmpty(selectedCategory))
+                {
+                    query = query.Where(x => x.Category == selectedCategory);
+                }
+                
+                // Apply date range filter
+                /*
+                 * This code to check the value of dateTime component was taken from a Stack overflow post
+                 * Uploaded by: Fabian Bigler
+                 * Titled: How to check if a DateTime field is not null or empty? [duplicate]
+                 * Available at: https://stackoverflow.com/questions/21905733/how-to-check-if-a-datetime-field-is-not-null-or-empty
+                 * Accessed 24 May 2023
+                */
+                if (betweenStartDate != DateTime.MinValue && betweenEndDate != DateTime.MinValue)
+                {
+                    query = query.Where(x => x.ProductDate >= betweenStartDate && x.ProductDate <= betweenEndDate);
+                }
+                
+                query = query.OrderByDescending(p => p.ProductDate);
 
                 var products = await webApplication2Context.ToListAsync();
                 

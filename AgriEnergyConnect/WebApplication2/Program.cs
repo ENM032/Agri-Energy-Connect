@@ -49,17 +49,6 @@ namespace WebApplication2
             app.UseAuthentication();
 
             app.UseAuthorization();
-            /*
-             * This code was taken from a Youtube video
-             * Uploaded by: Macro Code
-             * Titled: ASP.NET Core 7.0 Role Based Authorization || How to Implement Roles Based Authorization
-             * Available at: https://www.youtube.com/watch?v=VZgxKbAdbbo
-             * Accessed 24 May 2023
-            */
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapRazorPages();
-            });
 
             app.MapRazorPages();
 
