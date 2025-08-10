@@ -13,9 +13,9 @@ using Microsoft.Extensions.Logging;
 namespace WebApplication2.Controllers
 {
     /// <summary>
-    /// Controller for employee-specific functionality - only accessible to users with Employee role
+    /// Controller for employee-specific functionality - accessible to Admin and Support Employee roles
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Support Employee")]
     public class EmployeesController : Controller
     {
         private readonly WebApplication2Context _context;

@@ -48,6 +48,7 @@
                                         <th class="border-0 fw-semibold"><i class="bi bi-shield me-1 text-primary"></i>Role(s)</th>
                                         <th class="border-0 fw-semibold"><i class="bi bi-calendar me-1 text-primary"></i>Registration Date</th>
                                         <th class="border-0 fw-semibold"><i class="bi bi-check-circle me-1 text-primary"></i>Email Confirmed</th>
+                                        <th class="border-0 fw-semibold"><i class="bi bi-gear me-1 text-primary"></i>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -110,6 +111,25 @@
                                                     <span class="badge bg-warning">
                                                         <i class="bi bi-exclamation-triangle"></i> Pending
                                                     </span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @{
+                                                    var currentUserId = ViewContext.HttpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                                                    var isCurrentUser = currentUserId == user.Id;
+                                                }
+                                                @if (!isCurrentUser)
+                                                {
+                                                    <a asp-action="DeleteUser" asp-route-id="@user.Id" 
+                                                       class="btn btn-outline-danger btn-sm" 
+                                                       title="Delete User"
+                                                       onclick="return confirm('Are you sure you want to delete this user?')">
+                                                        <i class="bi bi-trash"></i>
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted small">Current User</span>
                                                 }
                                             </td>
                                         </tr>

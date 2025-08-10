@@ -194,6 +194,116 @@ namespace WebApplication2.Controllers
                 return View(model);
             }
         }
+
+        /// <summary>
+        /// Display user deletion confirmation
+        /// </summary>
+        /// <param name="id">User ID to delete</param>
+        /// <returns>Delete confirmation view</returns>
+        [HttpGet]
+        public async Task<IActionResult> DeleteUser(string? id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                _logger.LogWarning("DeleteUser attempted with null or empty ID");
+                return NotFound();
+            }
+
+            try
+            {
+                var user = await _userManager.FindByIdAsync(id);
+                if (user == null)
+                {
+                    _logger.LogWarning("User with ID {UserId} not found for deletion", id);
+                    return NotFound();
+                }
+
+                // Get user roles for display
+                var roles = await _userManager.GetRolesAsync(user);
+                ViewBag.UserRoles = roles;
+
+                return View(user);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading user deletion confirmation for {UserId}", id);
+                TempData["ErrorMessage"] = "An error occurred while loading user details.";
+                return RedirectToAction(nameof(ManageUsers));
+            }
+        }
+
+        /// <summary>
+        /// Confirm user deletion
+        /// </summary>
+        /// <param name="id">User ID to delete</param>
+        /// <returns>Redirect to manage users</returns>
+        [HttpPost, ActionName("DeleteUser")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteUserConfirmed(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                _logger.LogWarning("DeleteUserConfirmed attempted with null or empty ID");
+                return RedirectToAction(nameof(ManageUsers));
+            }
+
+            try
+            {
+                var user = await _userManager.FindByIdAsync(id);
+                if (user == null)
+                {
+                    _logger.LogWarning("User with ID {UserId} not found for deletion", id);
+                    TempData["ErrorMessage"] = "User not found.";
+                    return RedirectToAction(nameof(ManageUsers));
+                }
+
+                // Prevent admin from deleting themselves
+                var currentUser = await _userManager.GetUserAsync(User);
+                if (currentUser?.Id == user.Id)
+                {
+                    _logger.LogWarning("Admin attempted to delete their own account {UserId}", id);
+                    TempData["ErrorMessage"] = "You cannot delete your own account.";
+                    return RedirectToAction(nameof(ManageUsers));
+                }
+
+                var userEmail = user.Email;
+                var userRoles = await _userManager.GetRolesAsync(user);
+                var userDisplayName = user.Displayname;
+
+                // Delete associated products if user is a farmer
+                if (userRoles.Contains("Farmer"))
+                {
+                    var userProducts = await _context.Products.Where(p => p.UserId == user.Id).ToListAsync();
+                    if (userProducts.Any())
+                    {
+                        _context.Products.RemoveRange(userProducts);
+                        _logger.LogInformation("Deleted {ProductCount} products for user {UserId}", userProducts.Count, id);
+                    }
+                }
+
+                // Delete the user
+                var result = await _userManager.DeleteAsync(user);
+                if (result.Succeeded)
+                {
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("User account {Email} ({Roles}) deleted successfully by admin", userEmail, string.Join(", ", userRoles));
+                    TempData["SuccessMessage"] = $"User '{userDisplayName}' ({string.Join(", ", userRoles)}) deleted successfully.";
+                }
+                else
+                {
+                    _logger.LogError("Failed to delete user {UserId}: {Errors}", id, string.Join(", ", result.Errors.Select(e => e.Description)));
+                    TempData["ErrorMessage"] = "Failed to delete user: " + string.Join(", ", result.Errors.Select(e => e.Description));
+                }
+
+                return RedirectToAction(nameof(ManageUsers));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting user {UserId}", id);
+                TempData["ErrorMessage"] = "An error occurred while deleting the user account. Please try again.";
+                return RedirectToAction(nameof(ManageUsers));
+            }
+        }
     }
 
     /// <summary>

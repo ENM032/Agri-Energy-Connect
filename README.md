@@ -138,9 +138,11 @@ dotnet run --environment Production
 ```
 
 ### Default User Roles
-The application automatically seeds two roles:
-- **Farmer** - Can manage their own products and profile
-- **Employee** - Can manage farmer accounts and view all data
+The application includes three distinct user roles with specific permissions:
+
+- **Farmer** - Can manage their own products, profile, and view marketplace data
+- **Support Employee** - Can view and manage farmer accounts, access all farmer products, and provide customer support
+- **Admin** - Full system access including user management, product oversight, analytics, and the ability to create/delete any user account
 
 ## 📸 Application Screenshots
 
