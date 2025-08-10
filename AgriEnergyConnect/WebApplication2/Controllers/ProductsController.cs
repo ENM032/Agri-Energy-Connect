@@ -45,11 +45,21 @@ namespace WebApplication2.Controllers
                     return RedirectToAction("Login", "Account");
                 }
 
+                // Check if user is Support Employee or Admin to show all products
+                var currentUser = await _userManager.GetUserAsync(User);
+                var userRoles = await _userManager.GetRolesAsync(currentUser);
+                bool canViewAllProducts = userRoles.Contains("Admin") || userRoles.Contains("Support Employee");
+
                 // Build query with filters
                 var query = _context.Products
-                    .Where(x => x.UserId == userId)
                     .Include(p => p.User)
                     .AsQueryable();
+
+                // Filter by user if not Support Employee or Admin
+                if (!canViewAllProducts)
+                {
+                    query = query.Where(x => x.UserId == userId);
+                }
 
                 // Apply name filter
                 if (!string.IsNullOrEmpty(searchName))
@@ -184,8 +194,12 @@ namespace WebApplication2.Controllers
                     return NotFound();
                 }
 
-                // Ensure user can only edit their own products
-                if (product.UserId != userId)
+                // Check if user can edit this product (own products, or Support Employee/Admin can edit any)
+                var currentUser = await _userManager.GetUserAsync(User);
+                var userRoles = await _userManager.GetRolesAsync(currentUser);
+                bool canEditAllProducts = userRoles.Contains("Admin") || userRoles.Contains("Support Employee");
+                
+                if (!canEditAllProducts && product.UserId != userId)
                 {
                     _logger.LogWarning("User {UserId} attempted to edit product {ProductId} belonging to another user", userId, id);
                     TempData["ErrorMessage"] = "You can only edit your own products.";
@@ -225,8 +239,12 @@ namespace WebApplication2.Controllers
                     return RedirectToAction("Login", "Account");
                 }
 
-                // Ensure user can only edit their own products
-                if (product.UserId != userId)
+                // Check if user can edit this product (own products, or Support Employee/Admin can edit any)
+                var currentUser = await _userManager.GetUserAsync(User);
+                var userRoles = await _userManager.GetRolesAsync(currentUser);
+                bool canEditAllProducts = userRoles.Contains("Admin") || userRoles.Contains("Support Employee");
+                
+                if (!canEditAllProducts && product.UserId != userId)
                 {
                     _logger.LogWarning("User {UserId} attempted to update product {ProductId} belonging to another user", userId, id);
                     TempData["ErrorMessage"] = "You can only edit your own products.";
@@ -304,8 +322,12 @@ namespace WebApplication2.Controllers
                     return NotFound();
                 }
 
-                // Ensure user can only delete their own products
-                if (product.UserId != userId)
+                // Check if user can delete this product (own products, or Support Employee/Admin can delete any)
+                var currentUser = await _userManager.GetUserAsync(User);
+                var userRoles = await _userManager.GetRolesAsync(currentUser);
+                bool canDeleteAllProducts = userRoles.Contains("Admin") || userRoles.Contains("Support Employee");
+                
+                if (!canDeleteAllProducts && product.UserId != userId)
                 {
                     _logger.LogWarning("User {UserId} attempted to delete product {ProductId} belonging to another user", userId, id);
                     TempData["ErrorMessage"] = "You can only delete your own products.";

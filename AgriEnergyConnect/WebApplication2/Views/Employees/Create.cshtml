@@ -30,40 +30,36 @@
                     <form id="registerForm" method="post">
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
                         
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="Email" class="form-label fw-semibold">
-                                    <i class="bi bi-envelope me-1 text-primary"></i>Email Address <span class="text-danger">*</span>
-                                </label>
-                                <input asp-for="Email" class="form-control form-control-lg" placeholder="employee@example.com" />
-                                <span asp-validation-for="Email" class="text-danger small"></span>
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="DisplayName" class="form-label fw-semibold">
-                                    <i class="bi bi-person me-1 text-primary"></i>Display Name
-                                </label>
-                                <input asp-for="DisplayName" class="form-control form-control-lg" placeholder="Employee Name" />
-                                <span asp-validation-for="DisplayName" class="text-danger small"></span>
-                            </div>
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label fw-semibold">
+                                <i class="bi bi-envelope me-1 text-primary"></i>Email Address <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="Email" class="form-control form-control-lg" placeholder="employee@example.com" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
                         </div>
                         
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="Password" class="form-label fw-semibold">
-                                    <i class="bi bi-lock me-1 text-primary"></i>Password <span class="text-danger">*</span>
-                                </label>
-                                <input asp-for="Password" class="form-control form-control-lg" placeholder="Enter secure password" type="password" />
-                                <span asp-validation-for="Password" class="text-danger small"></span>
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="ConfirmPassword" class="form-label fw-semibold">
-                                    <i class="bi bi-lock me-1 text-primary"></i>Confirm Password <span class="text-danger">*</span>
-                                </label>
-                                <input asp-for="ConfirmPassword" class="form-control form-control-lg" placeholder="Confirm password" type="password" />
-                                <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
-                            </div>
+                        <div class="mb-3">
+                            <label asp-for="DisplayName" class="form-label fw-semibold">
+                                <i class="bi bi-person me-1 text-primary"></i>Display Name
+                            </label>
+                            <input asp-for="DisplayName" class="form-control form-control-lg" placeholder="Employee Name" />
+                            <span asp-validation-for="DisplayName" class="text-danger small"></span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label fw-semibold">
+                                <i class="bi bi-lock me-1 text-primary"></i>Password <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="Password" class="form-control form-control-lg" placeholder="Enter secure password" type="password" />
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="ConfirmPassword" class="form-label fw-semibold">
+                                <i class="bi bi-lock me-1 text-primary"></i>Confirm Password <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="ConfirmPassword" class="form-control form-control-lg" placeholder="Confirm password" type="password" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
                         </div>
                         @* 
                         This code was taken from a Youtube video

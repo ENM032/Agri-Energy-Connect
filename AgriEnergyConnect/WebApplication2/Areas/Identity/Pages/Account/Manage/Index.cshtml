@@ -45,26 +45,21 @@
                     <form id="profile-form" method="post">
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
                         
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="Username" class="form-label fw-semibold">
-                                        <i class="bi bi-at me-1"></i>Username
-                                    </label>
-                                    <input asp-for="Username" class="form-control form-control-lg" disabled />
-                                    <div class="form-text">Your username cannot be changed</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="Input.PhoneNumber" class="form-label fw-semibold">
-                                        <i class="bi bi-telephone me-1"></i>Phone Number
-                                    </label>
-                                    <input asp-for="Input.PhoneNumber" class="form-control form-control-lg" placeholder="Enter your phone number" />
-                                    <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
-                                    <div class="form-text">Optional: Used for account recovery and notifications</div>
-                                </div>
-                            </div>
+                        <div class="mb-4">
+                            <label asp-for="Username" class="form-label fw-semibold">
+                                <i class="bi bi-at me-2"></i>Username
+                            </label>
+                            <input asp-for="Username" class="form-control form-control-lg" disabled />
+                            <div class="form-text mt-1">Your username cannot be changed</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label asp-for="Input.PhoneNumber" class="form-label fw-semibold">
+                                <i class="bi bi-telephone me-2"></i>Phone Number
+                            </label>
+                            <input asp-for="Input.PhoneNumber" class="form-control form-control-lg" placeholder="Enter your phone number" />
+                            <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
+                            <div class="form-text mt-1">Optional: Used for account recovery and notifications</div>
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
@@ -83,20 +78,23 @@
                         <i class="bi bi-info-circle me-2"></i>Account Information
                     </h6>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="bi bi-envelope text-muted me-2"></i>
-                                <span class="text-muted">Email:</span>
-                                <span class="ms-2 fw-semibold">@Model.Username</span>
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-envelope text-primary me-3 fs-5"></i>
+                            <div>
+                                <span class="text-muted d-block">Email Address</span>
+                                <span class="fw-semibold">@Model.Username</span>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="bi bi-shield-check text-success me-2"></i>
-                                <span class="text-muted">Account Type:</span>
-                                <span class="ms-2 fw-semibold text-success">Farmer</span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-shield-check text-success me-3 fs-5"></i>
+                            <div>
+                                <span class="text-muted d-block">Account Type</span>
+                                <span class="fw-semibold text-success">Farmer</span>
                             </div>
                         </div>
                     </div>
