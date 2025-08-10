@@ -43,6 +43,10 @@ namespace WebApplication2
                             .AddDefaultTokenProviders()
                             .AddEntityFrameworkStores<WebApplication2Context>();
 
+            // Add custom services
+            builder.Services.AddScoped<WebApplication2.Services.IAuthorizationHelperService, WebApplication2.Services.AuthorizationHelperService>();
+            builder.Services.AddMemoryCache(); // For caching user roles and other data
+
             // Add services to the container.
             builder.Services.AddControllersWithViews();
 

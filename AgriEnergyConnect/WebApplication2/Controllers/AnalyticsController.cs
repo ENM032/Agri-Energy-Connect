@@ -44,7 +44,8 @@ namespace WebApplication2.Controllers
         {
             try
             {
-                var users = await _userManager.Users.ToListAsync();
+                // Use AsNoTracking for better performance on read-only queries
+                var users = await _userManager.Users.AsNoTracking().ToListAsync();
                 var userRoles = new Dictionary<string, string>();
 
                 foreach (var user in users)
@@ -82,6 +83,7 @@ namespace WebApplication2.Controllers
             try
             {
                 var productData = await _context.Products
+                    .AsNoTracking() // Performance optimization for read-only query
                     .GroupBy(p => p.Category)
                     .Select(g => new
                     {
@@ -106,6 +108,7 @@ namespace WebApplication2.Controllers
             try
             {
                 var trendData = await _context.Products
+                    .AsNoTracking() // Performance optimization for read-only query
                     .GroupBy(p => new { p.ProductDate.Year, p.ProductDate.Month })
                     .Select(g => new
                     {
@@ -126,10 +129,11 @@ namespace WebApplication2.Controllers
 
         private async Task<AnalyticsViewModel> GetAnalyticsData()
         {
-            var totalUsers = await _userManager.Users.CountAsync();
-            var totalProducts = await _context.Products.CountAsync();
+            // Use AsNoTracking for better performance on read-only queries
+            var totalUsers = await _userManager.Users.AsNoTracking().CountAsync();
+            var totalProducts = await _context.Products.AsNoTracking().CountAsync();
             
-            var users = await _userManager.Users.ToListAsync();
+            var users = await _userManager.Users.AsNoTracking().ToListAsync();
             var userRoles = new Dictionary<string, string>();
 
             foreach (var user in users)
@@ -143,10 +147,12 @@ namespace WebApplication2.Controllers
             var adminCount = userRoles.Values.Count(r => r == "Admin");
 
             var recentProducts = await _context.Products
+                .AsNoTracking() // Performance optimization
                 .Where(p => p.ProductDate >= DateTime.Now.AddDays(-30))
                 .CountAsync();
 
             var topCategories = await _context.Products
+                .AsNoTracking() // Performance optimization
                 .GroupBy(p => p.Category)
                 .Select(g => new CategoryStats
                 {
