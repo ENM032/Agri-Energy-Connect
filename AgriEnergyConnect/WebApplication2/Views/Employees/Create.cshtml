@@ -1,9 +1,10 @@
-﻿@model FarmerRegistrationModel
+@model FarmerRegistrationModel
 @{
     ViewBag.Title = "Create";
 }
 
-<h1>Creating new Farmer profile...</h1>
+<h1>Create New Support Employee</h1>
+<p class="text-muted">Create a new Support Employee account for the AgriEnergy Connect platform</p>
 
 <div class="row">
     <div class="col-md-4">
@@ -38,15 +39,15 @@
             *@
             <div class="form-floating mb-3">
                 <select asp-for="Role" class="form-select" aria-required="true">
-                    <option disabled selected>Click me</option>
-                    <option>Farmer</option>
+                    <option value="Support Employee" selected>Support Employee</option>
                 </select>
                 <label asp-for="Role">Select Role<span class="text-danger"> * </span></label>
                 <span asp-validation-for="Role" class="text-danger"></span>
+                <small class="form-text text-muted">This account will be created as a Support Employee</small>
             </div>
             <button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-formpurple">
                 <i class="bi bi-person-fill-add"></i>
-                Register
+                Create Support Employee
             </button>
         </form>
     </div>

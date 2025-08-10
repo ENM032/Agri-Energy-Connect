@@ -1,0 +1,158 @@
+@{
+    ViewData["Title"] = "Manage Users";
+    var userRoles = ViewBag.UserRoles as List<object>;
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="display-5 text-primary">
+                        <i class="bi bi-people"></i> Manage Users
+                    </h1>
+                    <p class="text-muted">View and manage all system users</p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Create", "Employees")" class="btn btn-primary">
+                        <i class="bi bi-person-plus"></i> Add Support Employee
+                    </a>
+                    <a href="@Url.Action("Index", "Admin")" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-table"></i> All Users (@userRoles.Count)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (userRoles != null && userRoles.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th><i class="bi bi-person"></i> Display Name</th>
+                                        <th><i class="bi bi-envelope"></i> Email</th>
+                                        <th><i class="bi bi-shield"></i> Role(s)</th>
+                                        <th><i class="bi bi-calendar"></i> Registration Date</th>
+                                        <th><i class="bi bi-check-circle"></i> Email Confirmed</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (dynamic userRole in userRoles)
+                                    {
+                                        var user = userRole.User as WebApplication2.Areas.Identity.Data.WebApplication2User;
+                                        var roles = userRole.Roles as IList<string>;
+                                        
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-circle me-2">
+                                                        @if (!string.IsNullOrEmpty(user.Displayname))
+                                                        {
+                                                            @user.Displayname.Substring(0, 1).ToUpper()
+                                                        }
+                                                        else
+                                                        {
+                                                            @user.Email.Substring(0, 1).ToUpper()
+                                                        }
+                                                    </div>
+                                                    <div>
+                                                        <strong>@(user.Displayname ?? "N/A")</strong>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>@user.Email</td>
+                                            <td>
+                                                @if (roles != null && roles.Any())
+                                                {
+                                                    @foreach (var role in roles)
+                                                    {
+                                                        <span class="badge @GetRoleBadgeClass(role) me-1">@role</span>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">No Role</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (user.LockoutEnd.HasValue)
+                                                {
+                                                    @user.LockoutEnd.Value.ToString("yyyy-MM-dd")
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">N/A</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (user.EmailConfirmed)
+                                                {
+                                                    <span class="badge bg-success">
+                                                        <i class="bi bi-check-circle"></i> Confirmed
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-warning">
+                                                        <i class="bi bi-exclamation-triangle"></i> Pending
+                                                    </span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-people display-1 text-muted"></i>
+                            <h4 class="text-muted mt-3">No users found</h4>
+                            <p class="text-muted">There are currently no users in the system.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .avatar-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #007bff;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 16px;
+    }
+</style>
+
+@functions {
+    string GetRoleBadgeClass(string role)
+    {
+        return role switch
+        {
+            "Admin" => "bg-danger",
+            "Support Employee" => "bg-info",
+            "Farmer" => "bg-success",
+            _ => "bg-secondary"
+        };
+    }
+}

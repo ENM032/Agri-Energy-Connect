@@ -39,33 +39,59 @@
                             </a>
                         </li>
 
-                        @if (User.IsInRole("Employee"))
+                        @if (User.IsInRole("Admin"))
                         {
                             <li class="w-100">
-                                <a href="#farmerSubmenu" data-bs-toggle="collapse" class="nav-link px-2 align-middle text-white rounded">
-                                    <i class="fs-5 bi bi-people-fill"></i><span class="ms-2 d-none d-sm-inline">Farmer Management</span>
+                                <a href="#adminSubmenu" data-bs-toggle="collapse" class="nav-link px-2 align-middle text-white rounded">
+                                    <i class="fs-5 bi bi-shield-fill"></i><span class="ms-2 d-none d-sm-inline">Administration</span>
                                     <i class="bi bi-chevron-down ms-auto d-none d-sm-inline"></i>
                                 </a>
-                                <ul class="collapse nav flex-column ms-3" id="farmerSubmenu">
+                                <ul class="collapse nav flex-column ms-3" id="adminSubmenu">
                                     <li class="w-100">
-                                        <a asp-controller="Employees" asp-action="Index" class="nav-link px-2 text-white-50 rounded">
-                                            <i class="bi bi-list-ul me-2"></i>All Farmers
+                                        <a asp-controller="Admin" asp-action="Index" class="nav-link px-2 text-white-50 rounded">
+                                            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                                        </a>
+                                    </li>
+                                    <li class="w-100">
+                                        <a asp-controller="Admin" asp-action="ManageUsers" class="nav-link px-2 text-white-50 rounded">
+                                            <i class="bi bi-people me-2"></i>Manage Users
+                                        </a>
+                                    </li>
+                                    <li class="w-100">
+                                        <a asp-controller="Admin" asp-action="ManageProducts" class="nav-link px-2 text-white-50 rounded">
+                                            <i class="bi bi-box-seam me-2"></i>Manage Products
+                                        </a>
+                                    </li>
+                                    <li class="w-100">
+                                        <a asp-controller="Analytics" asp-action="Index" class="nav-link px-2 text-white-50 rounded">
+                                            <i class="bi bi-graph-up me-2"></i>Analytics
                                         </a>
                                     </li>
                                     <li class="w-100">
                                         <a asp-controller="Employees" asp-action="Create" class="nav-link px-2 text-white-50 rounded">
-                                            <i class="bi bi-person-plus me-2"></i>Add Farmer
+                                            <i class="bi bi-person-plus me-2"></i>Add Support Employee
                                         </a>
                                     </li>
+                                </ul>
+                            </li>
+                        }
+                        else if (User.IsInRole("Support Employee"))
+                        {
+                            <li class="w-100">
+                                <a href="#supportSubmenu" data-bs-toggle="collapse" class="nav-link px-2 align-middle text-white rounded">
+                                    <i class="fs-5 bi bi-headset"></i><span class="ms-2 d-none d-sm-inline">Support</span>
+                                    <i class="bi bi-chevron-down ms-auto d-none d-sm-inline"></i>
+                                </a>
+                                <ul class="collapse nav flex-column ms-3" id="supportSubmenu">
                                     <li class="w-100">
-                                        <a asp-controller="Employees" asp-action="FarmerProducts" class="nav-link px-2 text-white-50 rounded">
+                                        <a asp-controller="Products" asp-action="Index" class="nav-link px-2 text-white-50 rounded">
                                             <i class="bi bi-box-seam me-2"></i>All Products
                                         </a>
                                     </li>
                                 </ul>
                             </li>
                         }
-                        else
+                        else if (User.IsInRole("Farmer"))
                         {
                             <li class="w-100">
                                 <a href="#productSubmenu" data-bs-toggle="collapse" class="nav-link px-2 align-middle text-white rounded">

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using WebApplication2.Areas.Identity.Data;
@@ -22,6 +22,7 @@ namespace WebApplication2.Models
         [DataType(DataType.Date)]
         public DateTime ProductDate { get; set; }
 
+        [Required]
         public string UserId { get; set; }
 
         [ValidateNever]

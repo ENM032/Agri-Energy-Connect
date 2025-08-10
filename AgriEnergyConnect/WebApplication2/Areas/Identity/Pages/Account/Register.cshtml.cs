@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
@@ -109,16 +109,8 @@ namespace WebApplication2.Areas.Identity.Pages.Account
             [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
             public string ConfirmPassword { get; set; }
 
-            /*
-             * This code was taken from a Youtube video
-             * Uploaded by: Macro Code
-             * Titled: ASP.NET Core 7.0 Role Based Authorization || How to Implement Roles Based Authorization
-             * Available at: https://www.youtube.com/watch?v=VZgxKbAdbbo
-             * Accessed 24 May 2023
-            */
-            public string Role { get; set; }
-
-            public IEnumerable<SelectListItem> RolesList { get; set; }
+            // Role is automatically set to "Farmer" for all new registrations
+            // Only employees can create other employee accounts through the employee portal
         }
 
 
@@ -126,8 +118,6 @@ namespace WebApplication2.Areas.Identity.Pages.Account
         {
             ReturnUrl = returnUrl;
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
-
-            getRoles();
         }
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
@@ -136,26 +126,20 @@ namespace WebApplication2.Areas.Identity.Pages.Account
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
             if (ModelState.IsValid)
             {
-                if (Input.Role == null)
+                var user = CreateUser();
+
+                user.Displayname = Input.DisplayName;
+
+                await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
+                await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+                var result = await _userManager.CreateAsync(user, Input.Password);
+
+                if (result.Succeeded)
                 {
-                    ModelState.AddModelError(string.Empty, "Please select a valid role");
-                    getRoles();
-                }
-                else
-                {
-                    var user = CreateUser();
+                    _logger.LogInformation("User created a new account with password.");
 
-                    user.Displayname = Input.DisplayName;
-
-                    await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
-                    await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
-                    var result = await _userManager.CreateAsync(user, Input.Password);
-
-                    if (result.Succeeded)
-                    {
-                        _logger.LogInformation("User created a new account with password.");
-
-                        await _userManager.AddToRoleAsync(user, Input.Role);
+                    // Default all new registrations to Farmer role
+                    await _userManager.AddToRoleAsync(user, "Farmer");
 
                         var userId = await _userManager.GetUserIdAsync(user);
                         var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
@@ -179,10 +163,9 @@ namespace WebApplication2.Areas.Identity.Pages.Account
                             return LocalRedirect(returnUrl);
                         }
                     }
-                    foreach (var error in result.Errors)
-                    {
-                        ModelState.AddModelError(string.Empty, error.Description);
-                    }
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
                 }
             }
 
@@ -213,24 +196,7 @@ namespace WebApplication2.Areas.Identity.Pages.Account
             return (IUserEmailStore<WebApplication2User>)_userStore;
         }
 
-        private void getRoles()
-        {
-
-            /*
-             * This code was taken from a Youtube video
-             * Uploaded by: Macro Code
-             * Titled: ASP.NET Core 7.0 Role Based Authorization || How to Implement Roles Based Authorization
-             * Available at: https://www.youtube.com/watch?v=VZgxKbAdbbo
-             * Accessed 24 May 2023
-            */
-            Input = new InputModel
-            {
-                RolesList = _roleManager.Roles.Select(x => x.Name).Select(i => new SelectListItem
-                {
-                    Text = i,
-                    Value = i
-                })
-            };
-        }
+        // Role selection removed - all new users are automatically assigned the Farmer role
+        // Employees can only be created through the employee management portal
     }
 }

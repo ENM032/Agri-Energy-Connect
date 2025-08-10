@@ -17,7 +17,7 @@ namespace WebApplication2.Controllers
 {
     // Only shows you this action if youre a employee [Authorize(Roles = "Employee")]
     // Only shows you this page if youre a farmer [Authorize(Roles = "Farmer")]
-    [Authorize]
+    [Authorize(Roles = "Farmer,Admin,Support Employee")]
     public class ProductsController : Controller
     {
         private readonly WebApplication2Context _context;
@@ -32,9 +32,9 @@ namespace WebApplication2.Controllers
         }
 
         /// <summary>
-        /// GET: Products - Display user's products
+        /// GET: Products - Display user's products with filtering
         /// </summary>
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string searchName, string categoryFilter, DateTime? dateFrom, DateTime? dateTo)
         {
             try
             {
@@ -45,13 +45,45 @@ namespace WebApplication2.Controllers
                     return RedirectToAction("Login", "Account");
                 }
 
-                var products = await _context.Products
+                // Build query with filters
+                var query = _context.Products
                     .Where(x => x.UserId == userId)
                     .Include(p => p.User)
+                    .AsQueryable();
+
+                // Apply name filter
+                if (!string.IsNullOrEmpty(searchName))
+                {
+                    query = query.Where(p => p.Name.Contains(searchName));
+                }
+
+                // Apply category filter
+                if (!string.IsNullOrEmpty(categoryFilter))
+                {
+                    query = query.Where(p => p.Category == categoryFilter);
+                }
+
+                // Apply date range filter
+                if (dateFrom.HasValue)
+                {
+                    query = query.Where(p => p.ProductDate >= dateFrom.Value);
+                }
+                if (dateTo.HasValue)
+                {
+                    query = query.Where(p => p.ProductDate <= dateTo.Value);
+                }
+
+                var products = await query
                     .OrderByDescending(p => p.ProductDate)
                     .ToListAsync();
 
-                _logger.LogInformation("Retrieved {ProductCount} products for user {UserId}", products.Count, userId);
+                // Pass filter values to view for maintaining state
+                ViewBag.SearchName = searchName;
+                ViewBag.CategoryFilter = categoryFilter;
+                ViewBag.DateFrom = dateFrom?.ToString("yyyy-MM-dd");
+                ViewBag.DateTo = dateTo?.ToString("yyyy-MM-dd");
+
+                _logger.LogInformation("Retrieved {ProductCount} products for user {UserId} with filters", products.Count, userId);
                 return View(products);
             }
             catch (Exception ex)
@@ -85,7 +117,7 @@ namespace WebApplication2.Controllers
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Name,Category,ProductDate")] Product product)
+        public async Task<IActionResult> Create([Bind("Id,Name,Category,ProductDate,UserId")] Product product)
         {
             try
             {
@@ -96,7 +128,7 @@ namespace WebApplication2.Controllers
                     return RedirectToAction("Login", "Account");
                 }
 
-                // Set the user ID for the product
+                // Ensure the UserId is set to the current user
                 product.UserId = userId;
 
                 // Validate product date is not in the future
@@ -320,18 +352,22 @@ namespace WebApplication2.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                // Ensure user can only delete their own products
-                if (product.UserId != userId)
+                // Check user permissions for deletion
+                var currentUser = await _userManager.GetUserAsync(User);
+                var userRoles = await _userManager.GetRolesAsync(currentUser);
+                
+                // Allow deletion if user is Admin, Support Employee, or owns the product
+                if (!userRoles.Contains("Admin") && !userRoles.Contains("Support Employee") && product.UserId != userId)
                 {
-                    _logger.LogWarning("User {UserId} attempted to delete product {ProductId} belonging to another user", userId, id);
-                    TempData["ErrorMessage"] = "You can only delete your own products.";
+                    _logger.LogWarning("User {UserId} attempted to delete product {ProductId} without permission", userId, id);
+                    TempData["ErrorMessage"] = "You don't have permission to delete this product.";
                     return RedirectToAction(nameof(Index));
                 }
 
                 _context.Products.Remove(product);
                 await _context.SaveChangesAsync();
                 
-                _logger.LogInformation("Product {ProductName} deleted successfully by user {UserId}", product.Name, userId);
+                _logger.LogInformation("Product {ProductName} deleted by user {UserId} with roles {Roles}", product.Name, userId, string.Join(", ", userRoles));
                 TempData["SuccessMessage"] = "Product deleted successfully!";
                 return RedirectToAction(nameof(Index));
             }

@@ -135,6 +135,7 @@ function enhanceFormValidation() {
         
         form.addEventListener('submit', function(e) {
             let isValid = true;
+            const submitButton = form.querySelector('button[type="submit"]');
             
             inputs.forEach(input => {
                 if (!validateField(input)) {
@@ -151,6 +152,14 @@ function enhanceFormValidation() {
             
             if (!isValid) {
                 e.preventDefault();
+                // Reset submit button state if validation fails
+                resetSubmitButton(form);
+            } else {
+                // Form is valid, show processing state
+                if (submitButton) {
+                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                    submitButton.disabled = true;
+                }
             }
         });
     });
@@ -231,6 +240,23 @@ function clearFieldError(field) {
     }
 }
 
+// Reset submit button to original state
+function resetSubmitButton(form) {
+    const submitButton = form.querySelector('button[type="submit"]');
+    if (submitButton) {
+        submitButton.disabled = false;
+        // Reset button text based on the button ID or form context
+        if (submitButton.id === 'registerSubmit') {
+            submitButton.innerHTML = '<i class="bi bi-person-plus"></i> Create Account';
+        } else if (submitButton.id === 'login-submit') {
+            submitButton.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Sign In';
+        } else {
+            // Generic fallback
+            submitButton.innerHTML = submitButton.getAttribute('data-original-text') || 'Submit';
+        }
+    }
+}
+
 // Initialize authentication page functionality
 document.addEventListener('DOMContentLoaded', function() {
     // Password strength monitoring
@@ -258,16 +284,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Enhanced form validation
     enhanceFormValidation();
     
-    // Add loading state to submit buttons
+    // Store original button text for all submit buttons
     const submitButtons = document.querySelectorAll('button[type="submit"]');
     submitButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const form = this.closest('form');
-            if (form && form.checkValidity()) {
-                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-                this.disabled = true;
-            }
-        });
+        if (!button.getAttribute('data-original-text')) {
+            button.setAttribute('data-original-text', button.innerHTML);
+        }
     });
     
     // Add smooth animations to form elements
@@ -276,6 +298,20 @@ document.addEventListener('DOMContentLoaded', function() {
         group.style.animationDelay = (index * 0.1) + 's';
         group.classList.add('fade-in');
     });
+    
+    // Reset button state on page load (in case of server-side validation errors)
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        resetSubmitButton(form);
+    });
+    
+    // Reset button state if there are validation errors on the page
+    const validationErrors = document.querySelectorAll('.text-danger, .alert-danger');
+    if (validationErrors.length > 0) {
+        forms.forEach(form => {
+            resetSubmitButton(form);
+        });
+    }
 });
 
 // Add CSS for validation states

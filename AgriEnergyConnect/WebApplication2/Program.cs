@@ -85,7 +85,7 @@ namespace WebApplication2
             {
                 var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
-                var roles = new[] { "Farmer", "Employee" };
+                var roles = new[] { "Farmer", "Admin", "Support Employee" };
 
                 foreach (var role in roles)
                 {

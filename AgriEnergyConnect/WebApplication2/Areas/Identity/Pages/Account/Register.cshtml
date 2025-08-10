@@ -70,13 +70,11 @@
                 </div>
                 
                 <div class="form-group">
-                    <label asp-for="Input.Role" class="form-label">
-                        <i class="bi bi-people"></i> Account Type <span class="required">*</span>
-                    </label>
-                    <select asp-for="Input.Role" class="form-control auth-select" asp-items="@Model.Input.RolesList" aria-required="true">
-                        <option value="" disabled selected>Choose your account type</option>
-                    </select>
-                    <span asp-validation-for="Input.Role" class="text-danger"></span>
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle"></i> 
+                        <strong>Account Type:</strong> Your account will be created as a <strong>Farmer</strong> by default.
+                        This gives you access to manage your products and profile.
+                    </div>
                 </div>
                 
                 <div class="form-group terms-group">

@@ -1,0 +1,392 @@
+@model WebApplication2.Controllers.AnalyticsViewModel
+@{
+    ViewData["Title"] = "Analytics Dashboard";
+}
+
+<div class="fade-in">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0"><i class="fas fa-chart-line me-2"></i>Analytics Dashboard</h2>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary" onclick="refreshData()">
+                        <i class="fas fa-sync-alt me-1"></i>Refresh
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="exportData()">
+                        <i class="fas fa-download me-1"></i>Export
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary bg-gradient rounded-circle p-3">
+                                <i class="fas fa-users text-white"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Total Users</h6>
+                            <h3 class="mb-0">@Model.TotalUsers</h3>
+                            <small class="text-success"><i class="fas fa-arrow-up"></i> @Model.RecentUsers new this month</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-success bg-gradient rounded-circle p-3">
+                                <i class="fas fa-seedling text-white"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Total Products</h6>
+                            <h3 class="mb-0">@Model.TotalProducts</h3>
+                            <small class="text-success"><i class="fas fa-arrow-up"></i> @Model.RecentProducts added this month</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-warning bg-gradient rounded-circle p-3">
+                                <i class="fas fa-user-tie text-white"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Farmers</h6>
+                            <h3 class="mb-0">@Model.FarmerCount</h3>
+                            <small class="text-muted">@(Model.TotalUsers > 0 ? Math.Round((double)Model.FarmerCount / Model.TotalUsers * 100, 1) : 0)% of total users</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-info bg-gradient rounded-circle p-3">
+                                <i class="fas fa-headset text-white"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Support Staff</h6>
+                            <h3 class="mb-0">@Model.SupportEmployeeCount</h3>
+                            <small class="text-muted">@Model.AdminCount Admins</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- User Registration Trends -->
+        <div class="col-lg-8 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>User Registration Trends</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="userRegistrationChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- User Role Distribution -->
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>User Role Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="userRoleChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Second Charts Row -->
+    <div class="row mb-4">
+        <!-- Product Categories -->
+        <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Product Categories</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="productCategoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Product Trends -->
+        <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0"><i class="fas fa-chart-area me-2"></i>Product Addition Trends</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="productTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Categories Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Top Product Categories</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Category</th>
+                                    <th>Product Count</th>
+                                    <th>Percentage</th>
+                                    <th>Progress</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < Model.TopCategories.Count; i++)
+                                {
+                                    var category = Model.TopCategories[i];
+                                    var percentage = Model.TotalProducts > 0 ? Math.Round((double)category.Count / Model.TotalProducts * 100, 1) : 0;
+                                    <tr>
+                                        <td><span class="badge bg-primary">#@(i + 1)</span></td>
+                                        <td><strong>@category.Category</strong></td>
+                                        <td>@category.Count</td>
+                                        <td>@percentage%</td>
+                                        <td>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar bg-success" role="progressbar" style="width: @percentage%" aria-valuenow="@percentage" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Chart configurations
+        const chartColors = {
+            primary: '#0d6efd',
+            success: '#198754',
+            warning: '#ffc107',
+            info: '#0dcaf0',
+            danger: '#dc3545'
+        };
+
+        // User Registration Chart
+        async function loadUserRegistrationChart() {
+            try {
+                const response = await fetch('/Analytics/GetUserRegistrationData');
+                const data = await response.json();
+                
+                const ctx = document.getElementById('userRegistrationChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.map(d => d.month),
+                        datasets: [{
+                            label: 'Total Users',
+                            data: data.map(d => d.count),
+                            borderColor: chartColors.primary,
+                            backgroundColor: chartColors.primary + '20',
+                            tension: 0.4,
+                            fill: true
+                        }, {
+                            label: 'Farmers',
+                            data: data.map(d => d.farmers),
+                            borderColor: chartColors.success,
+                            backgroundColor: chartColors.success + '20',
+                            tension: 0.4
+                        }, {
+                            label: 'Support Staff',
+                            data: data.map(d => d.supportEmployees),
+                            borderColor: chartColors.warning,
+                            backgroundColor: chartColors.warning + '20',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading user registration chart:', error);
+            }
+        }
+
+        // User Role Distribution Chart
+        function loadUserRoleChart() {
+            const ctx = document.getElementById('userRoleChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Farmers', 'Support Staff', 'Admins'],
+                    datasets: [{
+                        data: [@Model.FarmerCount, @Model.SupportEmployeeCount, @Model.AdminCount],
+                        backgroundColor: [chartColors.success, chartColors.warning, chartColors.info],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Product Category Chart
+        async function loadProductCategoryChart() {
+            try {
+                const response = await fetch('/Analytics/GetProductData');
+                const data = await response.json();
+                
+                const ctx = document.getElementById('productCategoryChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.map(d => d.category),
+                        datasets: [{
+                            label: 'Total Products',
+                            data: data.map(d => d.count),
+                            backgroundColor: chartColors.primary,
+                            borderRadius: 4
+                        }, {
+                            label: 'Recent (30 days)',
+                            data: data.map(d => d.recentProducts),
+                            backgroundColor: chartColors.success,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading product category chart:', error);
+            }
+        }
+
+        // Product Trend Chart
+        async function loadProductTrendChart() {
+            try {
+                const response = await fetch('/Analytics/GetProductTrendData');
+                const data = await response.json();
+                
+                const ctx = document.getElementById('productTrendChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.map(d => d.month),
+                        datasets: [{
+                            label: 'Products Added',
+                            data: data.map(d => d.count),
+                            borderColor: chartColors.success,
+                            backgroundColor: chartColors.success + '20',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading product trend chart:', error);
+            }
+        }
+
+        // Utility functions
+        function refreshData() {
+            location.reload();
+        }
+
+        function exportData() {
+            // Implement export functionality
+            alert('Export functionality would be implemented here');
+        }
+
+        // Initialize charts when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserRegistrationChart();
+            loadUserRoleChart();
+            loadProductCategoryChart();
+            loadProductTrendChart();
+        });
+    </script>
+}

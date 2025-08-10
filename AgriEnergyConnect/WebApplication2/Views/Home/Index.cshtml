@@ -1,3 +1,5 @@
+@using Microsoft.AspNetCore.Identity
+@using WebApplication2.Areas.Identity.Data
 @{
     ViewData["Title"] = "Dashboard";
 }
@@ -13,7 +15,21 @@
                     <p class="lead mb-4">Connecting farmers with sustainable energy solutions for a greener future</p>
                     @if (User.Identity.IsAuthenticated)
                     {
-                        <p class="mb-0">Welcome back, <strong>@User.Identity.Name</strong>!</p>
+                        @inject UserManager<WebApplication2User> UserManager
+                        var user = await UserManager.GetUserAsync(User);
+                        var displayName = user?.Displayname;
+                        
+                        if (string.IsNullOrEmpty(displayName))
+                        {
+                            displayName = User.Identity.Name ?? "User";
+                            displayName = displayName.Contains(" ") ? displayName.Split(' ')[0] : displayName;
+                        }
+                        
+                        if (displayName.Length > 10)
+                        {
+                            displayName = displayName.Substring(0, 10);
+                        }
+                        <p class="mb-0">Welcome back, <strong>@displayName</strong>!</p>
                     }
                     else
                     {

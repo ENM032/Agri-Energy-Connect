@@ -15,7 +15,7 @@ namespace WebApplication2.Controllers
     /// <summary>
     /// Controller for employee-specific functionality - only accessible to users with Employee role
     /// </summary>
-    [Authorize(Roles = "Employee")]
+    [Authorize(Roles = "Admin")]
     public class EmployeesController : Controller
     {
         private readonly WebApplication2Context _context;
@@ -55,25 +55,30 @@ namespace WebApplication2.Controllers
         }
 
         /// <summary>
-        /// GET: Display farmer registration form
+        /// Display user registration form for Admin to create Support Employees
         /// </summary>
+        /// <returns>Registration view</returns>
+        [HttpGet]
         public IActionResult Create()
         {
             try
             {
+                _logger.LogInformation("Displaying Support Employee registration form");
                 return View();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading farmer registration form");
-                TempData["ErrorMessage"] = "An error occurred while loading the form. Please try again.";
-                return RedirectToAction(nameof(Index));
+                _logger.LogError(ex, "Error displaying Support Employee registration form");
+                TempData["ErrorMessage"] = "An error occurred while loading the registration form.";
+                return RedirectToAction("Index", "Home");
             }
         }
 
         /// <summary>
-        /// POST: Create new farmer account
+        /// Create new Support Employee account (Admin only)
         /// </summary>
+        /// <param name="model">Registration model</param>
+        /// <returns>Redirect to success page or return view with errors</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(FarmerRegistrationModel model)
@@ -82,6 +87,13 @@ namespace WebApplication2.Controllers
             {
                 if (ModelState.IsValid)
                 {
+                    // Only allow Admin to create Support Employee accounts
+                    if (model.Role != "Support Employee")
+                    {
+                        ModelState.AddModelError("Role", "Only Support Employee accounts can be created here.");
+                        return View(model);
+                    }
+
                     // Check if user already exists
                     var existingUser = await _userManager.FindByEmailAsync(model.Email);
                     if (existingUser != null)
@@ -101,23 +113,24 @@ namespace WebApplication2.Controllers
 
                     if (result.Succeeded)
                     {
-                        await _userManager.AddToRoleAsync(user, model.Role);
-                        _logger.LogInformation("Farmer account created successfully for {Email} by employee", model.Email);
-                        TempData["SuccessMessage"] = "Farmer account created successfully!";
-                        return RedirectToAction(nameof(Index));
+                        // Assign Support Employee role to user
+                        await _userManager.AddToRoleAsync(user, "Support Employee");
+                        _logger.LogInformation("Support Employee account created successfully for {Email} by admin", model.Email);
+                        TempData["SuccessMessage"] = "Support Employee account created successfully!";
+                        return RedirectToAction("Index", "Home");
                     }
 
                     foreach (var error in result.Errors)
                     {
                         ModelState.AddModelError(String.Empty, error.Description);
-                        _logger.LogWarning("Farmer creation failed: {Error}", error.Description);
+                        _logger.LogWarning("Support Employee creation failed: {Error}", error.Description);
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating farmer account for {Email}", model?.Email);
-                ModelState.AddModelError("", "An error occurred while creating the farmer account. Please try again.");
+                _logger.LogError(ex, "Error creating Support Employee account for {Email}", model?.Email);
+                ModelState.AddModelError("", "An error occurred while creating the account. Please try again.");
             }
             
             return View(model);

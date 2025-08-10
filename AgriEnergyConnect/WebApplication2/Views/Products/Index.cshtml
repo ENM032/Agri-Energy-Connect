@@ -47,6 +47,54 @@
 
     @if (Model != null && Model.Any())
     {
+        <!-- Filter Section -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">
+                    <i class="bi bi-funnel me-2"></i>Filter Products
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="get" asp-action="Index">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="searchName" class="form-label">Product Name</label>
+                            <input type="text" class="form-control" id="searchName" name="searchName" placeholder="Search by name..." value="@ViewBag.SearchName" />
+                        </div>
+                        <div class="col-md-3">
+                            <label for="categoryFilter" class="form-label">Category</label>
+                            <select class="form-select" id="categoryFilter" name="categoryFilter">
+                                <option value="">All Categories</option>
+                                <option value="Cereals" selected="@(ViewBag.CategoryFilter == "Cereals")">Cereals</option>
+                                <option value="Seeds" selected="@(ViewBag.CategoryFilter == "Seeds")">Seeds</option>
+                                <option value="Pulses" selected="@(ViewBag.CategoryFilter == "Pulses")">Pulses</option>
+                                <option value="Fruits" selected="@(ViewBag.CategoryFilter == "Fruits")">Fruits</option>
+                                <option value="Vegetables" selected="@(ViewBag.CategoryFilter == "Vegetables")">Vegetables</option>
+                                <option value="Herbs & Spices" selected="@(ViewBag.CategoryFilter == "Herbs & Spices")">Herbs & Spices</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="dateFrom" class="form-label">Date From</label>
+                            <input type="date" class="form-control" id="dateFrom" name="dateFrom" value="@ViewBag.DateFrom" />
+                        </div>
+                        <div class="col-md-2">
+                            <label for="dateTo" class="form-label">Date To</label>
+                            <input type="date" class="form-control" id="dateTo" name="dateTo" value="@ViewBag.DateTo" />
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="bi bi-search me-1"></i>Filter
+                            </button>
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-clockwise me-1"></i>Clear
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
         <!-- Products Grid -->
         <div class="row">
             @foreach (var item in Model)
