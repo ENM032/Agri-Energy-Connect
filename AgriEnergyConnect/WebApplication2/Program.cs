@@ -38,10 +38,26 @@ namespace WebApplication2
             * Available at: https://www.youtube.com/watch?v=VZgxKbAdbbo
             * Accessed 24 May 2023
             */
-            builder.Services.AddIdentity<WebApplication2User, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = false)
-                            .AddDefaultUI()
-                            .AddDefaultTokenProviders()
-                            .AddEntityFrameworkStores<WebApplication2Context>();
+            builder.Services.AddIdentity<WebApplication2User, IdentityRole>(options => 
+            {
+                options.SignIn.RequireConfirmedAccount = false;
+                
+                // Password policy configuration
+                options.Password.RequireDigit = true;
+                options.Password.RequireLowercase = true;
+                options.Password.RequireUppercase = true;
+                options.Password.RequireNonAlphanumeric = true;
+                options.Password.RequiredLength = 8;
+                options.Password.RequiredUniqueChars = 1;
+                
+                // Account lockout configuration
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.AllowedForNewUsers = true;
+            })
+            .AddDefaultUI()
+            .AddDefaultTokenProviders()
+            .AddEntityFrameworkStores<WebApplication2Context>();
 
             // Add custom services
             builder.Services.AddScoped<WebApplication2.Services.IAuthorizationHelperService, WebApplication2.Services.AuthorizationHelperService>();
@@ -61,6 +77,17 @@ namespace WebApplication2
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
+
+            // Add security headers
+            app.Use(async (context, next) =>
+            {
+                context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+                context.Response.Headers.Add("X-Frame-Options", "DENY");
+                context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
+                context.Response.Headers.Add("Referrer-Policy", "strict-origin-when-cross-origin");
+                context.Response.Headers.Add("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' https://code.jquery.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;");
+                await next();
+            });
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();

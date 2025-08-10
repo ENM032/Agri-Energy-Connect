@@ -144,19 +144,29 @@ The application automatically seeds two roles:
 
 ## 📸 Application Screenshots
 
-*Screenshots will be added here to showcase the application's user interface and functionality.*
-
-### Login & Registration
+### Authentication
 ![Login Page](assets/screenshots/login.png)
+*Secure login interface with modern design and user-friendly authentication*
+
 ![Registration Page](assets/screenshots/register.png)
+*User registration with comprehensive form validation and security features*
 
 ### Dashboard Views
-<!-- ![Farmer Dashboard](assets/screenshots/farmer-dashboard.png) -->
-<!-- ![Employee Dashboard](assets/screenshots/employee-dashboard.png) -->
+![Main Dashboard](assets/screenshots/dashboard.png)
+*Comprehensive overview dashboard with key metrics and navigation*
 
-### Product Management
-<!-- ![Product List](assets/screenshots/product-list.png) -->
-<!-- ![Add Product](assets/screenshots/add-product.png) -->
+![Farmer Dashboard](assets/screenshots/farmer-dashboard.png)
+*Farmer-specific dashboard showing agricultural data and product management tools*
+
+### Administrative Features
+![Admin Dashboard](assets/screenshots/admin-dashboard.png)
+*Administrative control panel with user management and system oversight*
+
+![Admin User Management](assets/screenshots/admin-manage.png)
+*User management interface for administrators to oversee farmer accounts*
+
+![Admin Product Management](assets/screenshots/admin-products.png)
+*Product oversight and management tools for administrative users*
 
 ## 📁 Project Structure
 

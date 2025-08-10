@@ -1,40 +1,125 @@
-﻿@page
+@page
 @model EmailModel
 @{
     ViewData["Title"] = "Manage Email";
     ViewData["ActivePage"] = ManageNavPages.Email;
 }
 
-<h3>@ViewData["Title"]</h3>
-<partial name="_StatusMessage" for="StatusMessage" />
-<div class="row">
-    <div class="col-md-6">
-        <form id="email-form" method="post">
-            <div asp-validation-summary="All" class="text-danger" role="alert"></div>
-            @if (Model.IsEmailConfirmed)
-            {
-                <div class="form-floating mb-3 input-group">
-                    <input asp-for="Email" class="form-control" placeholder="Please enter your email." disabled />
-                        <div class="input-group-append">
-                            <span class="h-100 input-group-text text-success font-weight-bold">✓</span>
-                        </div>
-                    <label asp-for="Email" class="form-label"></label>
+<div class="fade-in">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-envelope me-2 text-primary"></i>@ViewData["Title"]
+            </h1>
+            <p class="text-muted mb-0">Update your email address and manage email preferences</p>
+        </div>
+    </div>
+
+    <partial name="_StatusMessage" for="StatusMessage" />
+
+    <div class="row">
+        <!-- Navigation Sidebar -->
+        <div class="col-lg-3 col-md-4 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-gear me-2"></i>Account Settings
+                    </h6>
                 </div>
-            }
-            else
-            {
-                <div class="form-floating mb-3">
-                    <input asp-for="Email" class="form-control" placeholder="Please enter your email." disabled />
-                    <label asp-for="Email" class="form-label"></label>
+                <div class="card-body p-0">
+                    <partial name="_ManageNav" />
                 </div>
-            }
-            <div class="form-floating mb-3">
-                <input asp-for="Input.NewEmail" class="form-control" autocomplete="email" aria-required="true" placeholder="Please enter new email." />
-                <label asp-for="Input.NewEmail" class="form-label"></label>
-                <span asp-validation-for="Input.NewEmail" class="text-danger"></span>
             </div>
-            <button id="change-email-button" type="submit" asp-page-handler="ChangeEmail" class="w-100 btn btn-lg btn-formpurple">Change email</button>
-        </form>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-9 col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-at me-2"></i>Email Management
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form id="email-form" method="post">
+                        <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+                        
+                        <div class="mb-4">
+                            <label asp-for="Email" class="form-label fw-semibold">
+                                <i class="bi bi-envelope-check me-2"></i>Current Email Address
+                            </label>
+                            @if (Model.IsEmailConfirmed)
+                            {
+                                <div class="input-group">
+                                    <input asp-for="Email" class="form-control form-control-lg" disabled />
+                                    <span class="input-group-text bg-success text-white">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                    </span>
+                                </div>
+                                <div class="form-text mt-1">
+                                    <i class="bi bi-shield-check text-success me-1"></i>
+                                    <span class="text-success">Email address is verified</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="input-group">
+                                    <input asp-for="Email" class="form-control form-control-lg" disabled />
+                                    <span class="input-group-text bg-warning text-dark">
+                                        <i class="bi bi-exclamation-triangle-fill"></i>
+                                    </span>
+                                </div>
+                                <div class="form-text mt-1">
+                                    <i class="bi bi-exclamation-triangle text-warning me-1"></i>
+                                    <span class="text-warning">Email address needs verification</span>
+                                </div>
+                            }
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label asp-for="Input.NewEmail" class="form-label fw-semibold">
+                                <i class="bi bi-envelope-plus me-2"></i>New Email Address
+                            </label>
+                            <input asp-for="Input.NewEmail" class="form-control form-control-lg" autocomplete="email" aria-required="true" placeholder="Enter your new email address" />
+                            <span asp-validation-for="Input.NewEmail" class="text-danger"></span>
+                            <div class="form-text mt-1">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    A verification email will be sent to your new address
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <button id="change-email-button" type="submit" asp-page-handler="ChangeEmail" class="btn btn-primary btn-lg">
+                                <i class="bi bi-envelope-arrow-up me-2"></i>Update Email
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Email Security Info -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="bi bi-shield-exclamation me-2"></i>Important Information
+                    </h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-info border-0">
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-info-circle-fill me-3 mt-1"></i>
+                            <div>
+                                <strong>Email Change Process</strong>
+                                <p class="mb-0">When you change your email address, you'll receive a verification link at your new email. Your email won't be updated until you click the verification link.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
