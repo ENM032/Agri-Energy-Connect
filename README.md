@@ -1,8 +1,8 @@
-# 🌾 Agri-Energy Connect
+# Agri-Energy Connect
 
 A comprehensive web platform that enables collaboration between energy providers and farmers, facilitating sustainable agricultural practices and energy management.
 
-## 📋 Table of Contents
+## Table of Contents
 - [Overview](#-overview)
 - [Tech Stack](#️-tech-stack)
 - [Features](#-features)
@@ -11,12 +11,13 @@ A comprehensive web platform that enables collaboration between energy providers
 - [Running the Application](#-running-the-application)
 - [Application Screenshots](#-application-screenshots)
 - [Project Structure](#-project-structure)
+- [Disclaimer](#-disclaimer)
 
-## 🌟 Overview
+## Overview
 
 Agri-Energy Connect is a prototype platform designed to bridge the gap between energy providers and farmers. The application allows farmers to manage their crop information while enabling energy company employees to oversee farmer profiles and agricultural data.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Backend Framework
 - **ASP.NET Core 7.0** - Modern, cross-platform web framework for building robust web applications
@@ -45,25 +46,25 @@ Agri-Energy Connect is a prototype platform designed to bridge the gap between e
 - **Anti-forgery Tokens** - CSRF protection
 - **Data Validation** - Input sanitization and model validation
 
-## ✨ Features
+## Features
 
 ### For Farmers
-- 🌱 **Product Management** - Add, edit, and manage crop information
-- 📊 **Dashboard** - View personal agricultural data
-- 🔐 **Secure Authentication** - Personal account management
+- **Product Management** - Add, edit, and manage crop information
+- **Dashboard** - View personal agricultural data
+- **Secure Authentication** - Personal account management
 
 ### For Employees
-- 👥 **Farmer Management** - Register and manage farmer accounts
-- 📈 **Data Overview** - Access to comprehensive farmer and crop data
-- 🛡️ **Administrative Controls** - Employee-only functionality
+- **Farmer Management** - Register and manage farmer accounts
+- **Data Overview** - Access to comprehensive farmer and crop data
+- **Administrative Controls** - Employee-only functionality
 
 ### General Features
-- 📱 **Responsive Design** - Works seamlessly on desktop and mobile devices
-- 🎨 **Modern UI** - Clean, intuitive user interface
-- 🔒 **Secure** - Industry-standard security practices
-- ⚡ **Performance** - Optimized database queries and caching
+- **Responsive Design** - Works seamlessly on desktop and mobile devices
+- **Modern UI** - Clean, intuitive user interface
+- **Secure** - Industry-standard security practices
+- **Performance** - Optimized database queries and caching
 
-## 📋 Prerequisites
+## Prerequisites
 
 Before running the application, ensure you have the following installed:
 
@@ -83,7 +84,7 @@ Before running the application, ensure you have the following installed:
 - **Visual Studio 2022** or **Visual Studio Code**
 - **SQL Server Management Studio (SSMS)** for database management
 
-## 🚀 Installation & Setup
+## Installation & Setup
 
 ### 1. Clone the Repository
 ```bash
@@ -121,7 +122,7 @@ dotnet ef database update
 dotnet build
 ```
 
-## ▶️ Running the Application
+## Running the Application
 
 ### Development Mode
 ```bash
@@ -144,7 +145,7 @@ The application includes three distinct user roles with specific permissions:
 - **Support Employee** - Can view and manage farmer accounts, access all farmer products, and provide customer support
 - **Admin** - Full system access including user management, product oversight, analytics, and the ability to create/delete any user account
 
-## 📸 Application Screenshots
+## Application Screenshots
 
 ### Authentication
 ![Login Page](assets/screenshots/login.png)
@@ -170,7 +171,7 @@ The application includes three distinct user roles with specific permissions:
 ![Admin Product Management](assets/screenshots/admin-products.png)
 *Product oversight and management tools for administrative users*
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 AgriEnergyConnect/
@@ -187,5 +188,10 @@ AgriEnergyConnect/
 ├── SQL Preloads/             # Database initialization scripts
 └── README.md                 # Project documentation
 ```
+
+## Disclaimer
+
+All README content, commit messages, pull request descriptions are generated using AI tools.
+
 ---
 
