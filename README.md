@@ -3,15 +3,15 @@
 A comprehensive web platform that enables collaboration between energy providers and farmers, facilitating sustainable agricultural practices and energy management.
 
 ## Table of Contents
-- [Overview](#-overview)
-- [Tech Stack](#️-tech-stack)
-- [Features](#-features)
-- [Prerequisites](#-prerequisites)
-- [Installation & Setup](#️-installation--setup)
-- [Running the Application](#-running-the-application)
-- [Application Screenshots](#-application-screenshots)
-- [Project Structure](#-project-structure)
-- [Disclaimer](#-disclaimer)
+- [Overview](#overview)
+- [Tech Stack](#️tech-stack)
+- [Features](#features)
+- [Prerequisites](#prerequisites)
+- [Installation & Setup](#️installation--setup)
+- [Running the Application](#running-the-application)
+- [Application Screenshots](#application-screenshots)
+- [Project Structure](#project-structure)
+- [Disclaimer](#disclaimer)
 
 ## Overview
 
