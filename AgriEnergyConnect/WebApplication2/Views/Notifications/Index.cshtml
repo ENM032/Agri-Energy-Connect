@@ -1,0 +1,250 @@
+@model WebApplication2.Models.ViewModels.NotificationIndexViewModel
+@{
+    ViewData["Title"] = "Notifications";
+    var unreadOnly = Model.UnreadOnly;
+    var unreadCount = Model.UnreadCount;
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">
+                    <i class="fas fa-bell me-2"></i>Notifications
+                    @if (unreadCount > 0)
+                    {
+                        <span class="badge bg-danger ms-2">@unreadCount</span>
+                    }
+                </h2>
+                <div class="btn-group" role="group">
+                    <a href="@Url.Action("Index", new { unreadOnly = false })" 
+                       class="btn @(unreadOnly ? "btn-outline-primary" : "btn-primary")">
+                        All
+                    </a>
+                    <a href="@Url.Action("Index", new { unreadOnly = true })" 
+                       class="btn @(unreadOnly ? "btn-primary" : "btn-outline-primary")">
+                        Unread (@unreadCount)
+                    </a>
+                </div>
+            </div>
+
+            @if (Model.Notifications.Any())
+            {
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-success" id="markAllReadBtn">
+                                <i class="fas fa-check-double me-1"></i>Mark All as Read
+                            </button>
+                            <button type="button" class="btn btn-outline-danger" id="deleteAllBtn">
+                                <i class="fas fa-trash me-1"></i>Delete All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12">
+                        <div class="list-group" id="notificationsList">
+                            @foreach (var notification in Model.Notifications)
+                            {
+                                <div class="list-group-item @(notification.IsRead ? "" : "list-group-item-warning") notification-item" 
+                                     data-notification-id="@notification.Id">
+                                    <div class="d-flex w-100 justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <span class="badge me-2 @GetBadgeClass(notification.Type)">@notification.Type</span>
+                                                @if (!notification.IsRead)
+                                                {
+                                                    <span class="badge bg-primary me-2">New</span>
+                                                }
+                                                <h6 class="mb-0">@notification.Title</h6>
+                                            </div>
+                                            <p class="mb-2">@notification.Message</p>
+                                            <small class="text-muted">
+                                                <i class="fas fa-clock me-1"></i>
+                                                @notification.CreatedAt.ToString("MMM dd, yyyy 'at' HH:mm")
+                                                @if (notification.IsRead && notification.ReadAt.HasValue)
+                                                {
+                                                    <span class="ms-3">
+                                                        <i class="fas fa-eye me-1"></i>
+                                                        Read on @notification.ReadAt.Value.ToString("MMM dd, yyyy 'at' HH:mm")
+                                                    </span>
+                                                }
+                                            </small>
+                                        </div>
+                                        <div class="btn-group-vertical ms-3" role="group">
+                                            @if (!notification.IsRead)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-outline-success mark-read-btn" 
+                                                        data-notification-id="@notification.Id" title="Mark as Read">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            }
+                                            <button type="button" class="btn btn-sm btn-outline-danger delete-btn" 
+                                                    data-notification-id="@notification.Id" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">No notifications found</h4>
+                    <p class="text-muted">
+                        @if (unreadOnly)
+                        {
+                            <text>You have no unread notifications.</text>
+                        }
+                        else
+                        {
+                            <text>You don't have any notifications yet.</text>
+                        }
+                    </p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@functions {
+    private string GetBadgeClass(string type)
+    {
+        return type switch
+        {
+            "Success" => "bg-success",
+            "Warning" => "bg-warning text-dark",
+            "Error" => "bg-danger",
+            "Info" => "bg-info",
+            _ => "bg-secondary"
+        };
+    }
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Mark single notification as read
+            $('.mark-read-btn').click(function() {
+                var notificationId = $(this).data('notification-id');
+                markAsRead(notificationId);
+            });
+
+            // Mark all notifications as read
+            $('#markAllReadBtn').click(function() {
+                if (confirm('Are you sure you want to mark all notifications as read?')) {
+                    markAllAsRead();
+                }
+            });
+
+            // Delete single notification
+            $('.delete-btn').click(function() {
+                var notificationId = $(this).data('notification-id');
+                if (confirm('Are you sure you want to delete this notification?')) {
+                    deleteNotification(notificationId);
+                }
+            });
+
+            // Delete all notifications
+            $('#deleteAllBtn').click(function() {
+                if (confirm('Are you sure you want to delete all notifications? This action cannot be undone.')) {
+                    deleteAllNotifications();
+                }
+            });
+
+            function markAsRead(notificationId) {
+                $.ajax({
+                    url: '@Url.Action("MarkAsRead", "Notifications")',
+                    type: 'POST',
+                    data: {
+                        id: notificationId,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert('Error: ' + (response.message || 'Failed to mark notification as read'));
+                        }
+                    },
+                    error: function() {
+                        alert('An error occurred while marking the notification as read.');
+                    }
+                });
+            }
+
+            function markAllAsRead() {
+                $.ajax({
+                    url: '@Url.Action("MarkAllAsRead", "Notifications")',
+                    type: 'POST',
+                    data: {
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert('Error: ' + (response.message || 'Failed to mark all notifications as read'));
+                        }
+                    },
+                    error: function() {
+                        alert('An error occurred while marking all notifications as read.');
+                    }
+                });
+            }
+
+            function deleteNotification(notificationId) {
+                $.ajax({
+                    url: '@Url.Action("Delete", "Notifications")',
+                    type: 'POST',
+                    data: {
+                        id: notificationId,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('[data-notification-id="' + notificationId + '"]').closest('.notification-item').fadeOut(300, function() {
+                                $(this).remove();
+                                if ($('.notification-item').length === 0) {
+                                    location.reload();
+                                }
+                            });
+                        } else {
+                            alert('Error: ' + (response.message || 'Failed to delete notification'));
+                        }
+                    },
+                    error: function() {
+                        alert('An error occurred while deleting the notification.');
+                    }
+                });
+            }
+
+            function deleteAllNotifications() {
+                $.ajax({
+                    url: '@Url.Action("DeleteAll", "Notifications")',
+                    type: 'POST',
+                    data: {
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert('Error: ' + (response.message || 'Failed to delete all notifications'));
+                        }
+                    },
+                    error: function() {
+                        alert('An error occurred while deleting all notifications.');
+                    }
+                });
+            }
+        });
+    </script>
+}

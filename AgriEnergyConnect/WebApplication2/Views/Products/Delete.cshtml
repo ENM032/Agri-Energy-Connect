@@ -1,4 +1,4 @@
-﻿@model WebApplication2.Models.Product
+@model WebApplication2.Models.Product
 
 @{
     ViewData["Title"] = "Delete";
@@ -33,7 +33,7 @@
             @Html.DisplayNameFor(model => model.User)
         </dt>
         <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.User.Id)
+            @Html.DisplayFor(model => model.User != null ? model.User.Id : "Unknown User")
         </dd>
     </dl>
     

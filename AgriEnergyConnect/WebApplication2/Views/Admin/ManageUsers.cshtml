@@ -1,6 +1,6 @@
+@model WebApplication2.Models.ViewModels.UserManagementViewModel
 @{
     ViewData["Title"] = "Manage Users";
-    var userRoles = ViewBag.UserRoles as List<object>;
 }
 
 <div class="fade-in">
@@ -33,11 +33,11 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
-                        <i class="bi bi-table me-2"></i>All Users (@userRoles.Count)
+                        <i class="bi bi-table me-2"></i>All Users (@Model.TotalUsers)
                     </h5>
                 </div>
                 <div class="card-body p-0">
-                    @if (userRoles != null && userRoles.Any())
+                    @if (Model.Users != null && Model.Users.Any())
                     {
                         <div class="table-responsive">
                             <table class="table table-hover mb-0">
@@ -52,18 +52,16 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (dynamic userRole in userRoles)
+                                    @foreach (var user in Model.Users)
                                     {
-                                        var user = userRole.User as WebApplication2.Areas.Identity.Data.WebApplication2User;
-                                        var roles = userRole.Roles as IList<string>;
                                         
                                         <tr>
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <div class="avatar-circle me-2">
-                                                        @if (!string.IsNullOrEmpty(user.Displayname))
+                                                        @if (!string.IsNullOrEmpty(user.DisplayName))
                                                         {
-                                                            @user.Displayname.Substring(0, 1).ToUpper()
+                                                            @user.DisplayName.Substring(0, 1).ToUpper()
                                                         }
                                                         else
                                                         {
@@ -71,15 +69,15 @@
                                                         }
                                                     </div>
                                                     <div>
-                                                        <strong>@(user.Displayname ?? "N/A")</strong>
+                                                        <strong>@(user.DisplayName ?? "N/A")</strong>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td>@user.Email</td>
                                             <td>
-                                                @if (roles != null && roles.Any())
+                                                @if (user.Roles != null && user.Roles.Any())
                                                 {
-                                                    @foreach (var role in roles)
+                                                    @foreach (var role in user.Roles)
                                                     {
                                                         <span class="badge @GetRoleBadgeClass(role) me-1">@role</span>
                                                     }
@@ -90,14 +88,7 @@
                                                 }
                                             </td>
                                             <td>
-                                                @if (user.LockoutEnd.HasValue)
-                                                {
-                                                    @user.LockoutEnd.Value.ToString("yyyy-MM-dd")
-                                                }
-                                                else
-                                                {
-                                                    <span class="text-muted">N/A</span>
-                                                }
+                                                @user.FormattedCreatedDate
                                             </td>
                                             <td>
                                                 @if (user.EmailConfirmed)

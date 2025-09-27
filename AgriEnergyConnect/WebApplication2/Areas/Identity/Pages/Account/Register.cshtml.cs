@@ -20,6 +20,8 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using WebApplication2.Areas.Identity.Data;
+using WebApplication2.Services;
+using WebApplication2.Models;
 
 namespace WebApplication2.Areas.Identity.Pages.Account
 {
@@ -32,6 +34,7 @@ namespace WebApplication2.Areas.Identity.Pages.Account
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly INotificationService _notificationService;
 
         public RegisterModel(
             UserManager<WebApplication2User> userManager,
@@ -39,7 +42,8 @@ namespace WebApplication2.Areas.Identity.Pages.Account
             SignInManager<WebApplication2User> signInManager,
             ILogger<RegisterModel> logger,
             RoleManager<IdentityRole> roleManager,
-            IEmailSender emailSender)
+            IEmailSender emailSender,
+            INotificationService notificationService)
         {
             _userManager = userManager;
             _userStore = userStore;
@@ -48,6 +52,7 @@ namespace WebApplication2.Areas.Identity.Pages.Account
             _logger = logger;
             _emailSender = emailSender;
             _roleManager = roleManager;
+            _notificationService = notificationService;
         }
 
         /// <summary>
@@ -140,6 +145,14 @@ namespace WebApplication2.Areas.Identity.Pages.Account
 
                     // Default all new registrations to Farmer role
                     await _userManager.AddToRoleAsync(user, "Farmer");
+
+                    // Create welcome notification for new user
+                    await _notificationService.CreateNotificationAsync(
+                        user.Id,
+                        "Welcome to AgriEnergyConnect!",
+                        $"Welcome {Input.DisplayName}! Your account has been successfully created. You can now start exploring our platform and connect with other farmers.",
+                        NotificationType.Success
+                    );
 
                         var userId = await _userManager.GetUserIdAsync(user);
                         var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);

@@ -28,10 +28,17 @@ namespace WebApplication2.Models
         [Display(Name = "Production Date")]
         public DateTime ProductDate { get; set; }
 
+        [StringLength(500, ErrorMessage = "Image path must not exceed 500 characters")]
+        [Display(Name = "Product Image")]
+        public string? ImagePath { get; set; }
+
+        [StringLength(100, ErrorMessage = "Image filename must not exceed 100 characters")]
+        public string? ImageFileName { get; set; }
+
         [Required]
-        public string UserId { get; set; }
+        public required string UserId { get; set; }
 
         [ValidateNever]
-        public WebApplication2User User { get; set; }
+        public WebApplication2User? User { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,9 +11,10 @@ namespace WebApplication2.Areas.Identity.Data;
 public class WebApplication2User : IdentityUser
 {
     public string? Displayname { get; set; }
+    public DateTime RegistrationDate { get; set; } = DateTime.UtcNow;
     // This code was taken from a website 
     // Availble at: https://learn.microsoft.com/en-us/ef/core/modeling/relationships
     // Accessed 26 May 2024
-    public ICollection<Product> Products { get; set; }
+    public ICollection<Product> Products { get; set; } = new List<Product>();
 }
 

@@ -6,7 +6,7 @@
 
 <h1>Deleting farmer product...</h1>
 
-<h3 style="color:var(--danger-color)">Are you sure you want to delete @Model.User.Displayname's product?</h3>
+<h3 style="color:var(--danger-color)">Are you sure you want to delete @(Model.User?.Displayname ?? "Unknown User")'s product?</h3>
 <div>
     <hr />
     <dl class="row">

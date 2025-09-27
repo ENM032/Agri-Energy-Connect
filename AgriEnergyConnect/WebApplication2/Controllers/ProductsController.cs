@@ -12,6 +12,10 @@ using Microsoft.IdentityModel.Tokens;
 using WebApplication2.Areas.Identity.Data;
 using WebApplication2.Data;
 using WebApplication2.Models;
+using WebApplication2.Models.ViewModels;
+using WebApplication2.Models.DTOs;
+using WebApplication2.Services;
+using AutoMapper;
 
 namespace WebApplication2.Controllers
 {
@@ -23,21 +27,40 @@ namespace WebApplication2.Controllers
         private readonly WebApplication2Context _context;
         private readonly UserManager<WebApplication2User> _userManager;
         private readonly ILogger<ProductsController> _logger;
+        private readonly IFileUploadService _fileUploadService;
+        private readonly INotificationService _notificationService;
+        private readonly IMapper _mapper;
+        private readonly IPerformanceLoggingService _performanceLoggingService;
+        private readonly ICachingService _cachingService;
+        private readonly IQueryOptimizationService _queryOptimizationService;
         
-        public ProductsController(WebApplication2Context context, UserManager<WebApplication2User> userManager, ILogger<ProductsController> logger)
+        public ProductsController(WebApplication2Context context, UserManager<WebApplication2User> userManager, ILogger<ProductsController> logger, IFileUploadService fileUploadService, INotificationService notificationService, IMapper mapper, IPerformanceLoggingService performanceLoggingService, ICachingService cachingService, IQueryOptimizationService queryOptimizationService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _fileUploadService = fileUploadService;
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            _performanceLoggingService = performanceLoggingService ?? throw new ArgumentNullException(nameof(performanceLoggingService));
+            _cachingService = cachingService ?? throw new ArgumentNullException(nameof(cachingService));
+            _queryOptimizationService = queryOptimizationService ?? throw new ArgumentNullException(nameof(queryOptimizationService));
         }
 
         /// <summary>
-        /// GET: Products - Display user's products with filtering
+        /// GET: Products - Display user's products with filtering and pagination
         /// </summary>
-        public async Task<IActionResult> Index(string searchName, string categoryFilter, DateTime? dateFrom, DateTime? dateTo)
+        [ResponseCache(CacheProfileName = "ProductList")]
+        public async Task<IActionResult> Index(string searchName, string categoryFilter, DateTime? dateFrom, DateTime? dateTo, int page = 1, int pageSize = 10)
         {
+            using var tracker = _performanceLoggingService.StartTracking("ProductsController.Index", new { searchName, categoryFilter, dateFrom, dateTo, page, pageSize });
+            
             try
             {
+                // Ensure valid pagination parameters
+                page = Math.Max(1, page);
+                pageSize = Math.Max(1, Math.Min(50, pageSize)); // Limit max page size to 50
+                
                 var userId = GetCurrentUserId();
                 if (string.IsNullOrEmpty(userId))
                 {
@@ -50,57 +73,69 @@ namespace WebApplication2.Controllers
                 var userRoles = await _userManager.GetRolesAsync(currentUser);
                 bool canViewAllProducts = userRoles.Contains("Admin") || userRoles.Contains("Support Employee");
 
-                // Build query with filters
-                var query = _context.Products
-                    .Include(p => p.User)
-                    .AsQueryable();
+                // Create cache key based on user and filters
+                var hasFilters = !string.IsNullOrEmpty(searchName) || !string.IsNullOrEmpty(categoryFilter) || dateFrom.HasValue || dateTo.HasValue;
+                var cacheKey = hasFilters ? 
+                    $"products_filtered_{userId}_{searchName}_{categoryFilter}_{dateFrom}_{dateTo}_{canViewAllProducts}_{page}_{pageSize}" :
+                    $"{(canViewAllProducts ? CacheKeys.ProductsList : string.Format(CacheKeys.ProductsListByCategory, userId))}_{page}_{pageSize}";
 
-                // Filter by user if not Support Employee or Admin
-                if (!canViewAllProducts)
+                // Use optimized query service
+                PagedResult<Product> pagedProducts;
+                if (!hasFilters)
                 {
-                    query = query.Where(x => x.UserId == userId);
+                    // Use optimized service for basic product retrieval
+                    pagedProducts = await _queryOptimizationService.GetProductsOptimizedAsync(canViewAllProducts ? null : userId, page, pageSize);
                 }
-
-                // Apply name filter
-                if (!string.IsNullOrEmpty(searchName))
+                else
                 {
-                    query = query.Where(p => p.Name.Contains(searchName));
+                    // Use optimized service for filtered product retrieval
+                    pagedProducts = await _queryOptimizationService.GetFilteredProductsOptimizedAsync(
+                        canViewAllProducts ? null : userId,
+                        searchName,
+                        categoryFilter,
+                        dateFrom,
+                        dateTo,
+                        page,
+                        pageSize);
                 }
+                
+                _performanceLoggingService.LogDatabaseQuery("ProductsQuery", tracker.ElapsedTime, pagedProducts.TotalCount);
 
-                // Apply category filter
-                if (!string.IsNullOrEmpty(categoryFilter))
+                // Map to view model
+                var productViewModels = _mapper.Map<List<ProductViewModel>>(pagedProducts.Items);
+                
+                var indexViewModel = new ProductIndexViewModel
                 {
-                    query = query.Where(p => p.Category == categoryFilter);
-                }
+                    Products = productViewModels,
+                    SearchName = searchName,
+                    CategoryFilter = categoryFilter,
+                    DateFrom = dateFrom,
+                    DateTo = dateTo,
+                    Categories = GetCategories().Select(c => c.Text).ToList(),
+                    CanViewAllProducts = canViewAllProducts,
+                    CurrentPage = pagedProducts.Page,
+                    TotalPages = pagedProducts.TotalPages,
+                    PageSize = pagedProducts.PageSize,
+                    TotalProducts = pagedProducts.TotalCount
+                };
 
-                // Apply date range filter
-                if (dateFrom.HasValue)
-                {
-                    query = query.Where(p => p.ProductDate >= dateFrom.Value);
-                }
-                if (dateTo.HasValue)
-                {
-                    query = query.Where(p => p.ProductDate <= dateTo.Value);
-                }
-
-                var products = await query
-                    .OrderByDescending(p => p.ProductDate)
-                    .ToListAsync();
-
-                // Pass filter values to view for maintaining state
-                ViewBag.SearchName = searchName;
-                ViewBag.CategoryFilter = categoryFilter;
-                ViewBag.DateFrom = dateFrom?.ToString("yyyy-MM-dd");
-                ViewBag.DateTo = dateTo?.ToString("yyyy-MM-dd");
-
-                _logger.LogInformation("Retrieved {ProductCount} products for user {UserId} with filters", products.Count, userId);
-                return View(products);
+                _logger.LogInformation("Retrieved {ProductCount} products for user {UserId} with filters (page {Page} of {TotalPages})", pagedProducts.Items.Count, userId, page, pagedProducts.TotalPages);
+                tracker.Complete();
+                return View(indexViewModel);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving products for user");
                 TempData["ErrorMessage"] = "An error occurred while loading your products. Please try again.";
-                return View(new List<Product>());
+                return View(new ProductIndexViewModel
+                {
+                    Products = new List<ProductViewModel>(),
+                    Categories = GetCategories().Select(c => c.Text).ToList(),
+                    CurrentPage = 1,
+                    TotalPages = 1,
+                    PageSize = pageSize,
+                    TotalProducts = 0
+                });
             }
         }
 
@@ -111,8 +146,11 @@ namespace WebApplication2.Controllers
         {
             try
             {
-                ViewBag.CategoriesSelectList = new SelectList(GetCategories(), "Value", "Text");
-                return View();
+                var createViewModel = new ProductCreateViewModel
+                {
+                    Categories = GetCategories().Select(c => c.Text).ToList()
+                };
+                return View(createViewModel);
             }
             catch (Exception ex)
             {
@@ -127,8 +165,10 @@ namespace WebApplication2.Controllers
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name,Category,ProductDate,UserId")] Product product)
+        public async Task<IActionResult> Create(ProductCreateViewModel model, IFormFile? productImage)
         {
+            using var tracker = _performanceLoggingService.StartTracking("ProductsController.Create", new { productName = model?.Name, hasImage = productImage != null });
+            
             try
             {
                 var userId = GetCurrentUserId();
@@ -138,33 +178,80 @@ namespace WebApplication2.Controllers
                     return RedirectToAction("Login", "Account");
                 }
 
-                // Ensure the UserId is set to the current user
+                // Map view model to entity
+                var product = _mapper.Map<Product>(model);
                 product.UserId = userId;
 
                 // Validate product date is not in the future
-                if (product.ProductDate > DateTime.Now)
+                if (model.ProductDate > DateTime.Now)
                 {
                     ModelState.AddModelError("ProductDate", "Production date cannot be in the future.");
                 }
 
+                // Handle file upload if provided
+                if (productImage != null)
+                {
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
+                    var validationResult = _fileUploadService.ValidateFile(productImage, allowedExtensions, 5);
+                    if (!validationResult.IsValid)
+                    {
+                        ModelState.AddModelError("productImage", validationResult.ErrorMessage);
+                        model.Categories = GetCategories().Select(c => c.Text).ToList();
+                        return View(model);
+                    }
+
+                    try
+                    {
+                        using var uploadTracker = _performanceLoggingService.StartTracking("ProductsController.Create.FileUpload", new { fileName = productImage.FileName, fileSize = productImage.Length });
+                        var uploadResult = await _fileUploadService.UploadFileAsync(productImage, "products");
+                        product.ImagePath = uploadResult;
+                        product.ImageFileName = productImage.FileName;
+                        uploadTracker.Complete();
+                        _logger.LogInformation("Product image uploaded successfully: {ImagePath}", uploadResult);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error uploading product image");
+                        ModelState.AddModelError("productImage", "Failed to upload image. Please try again.");
+                        model.Categories = GetCategories().Select(c => c.Text).ToList();
+                        return View(model);
+                    }
+                }
+
                 if (ModelState.IsValid)
                 {
+                    using var dbTracker = _performanceLoggingService.StartTracking("ProductsController.Create.DatabaseSave", new { productName = product.Name });
                     _context.Add(product);
                     await _context.SaveChangesAsync();
+                    dbTracker.Complete();
+                    
+                    // Invalidate product cache
+                    _cachingService.Remove(CacheKeys.ProductsList);
+                    _cachingService.Remove(string.Format(CacheKeys.ProductsListByCategory, userId));
+                    _cachingService.RemoveByPrefix("products_filtered_");
+                    
+                    // Create notification for successful product creation
+                    await _notificationService.CreateNotificationAsync(
+                        userId,
+                        "Product Created",
+                        $"Your product '{product.Name}' has been successfully created.",
+                        NotificationType.Success
+                    );
                     
                     _logger.LogInformation("Product {ProductName} created successfully by user {UserId}", product.Name, userId);
                     TempData["SuccessMessage"] = "Product created successfully!";
+                    tracker.Complete();
                     return RedirectToAction(nameof(Index));
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating product {ProductName}", product?.Name);
+                _logger.LogError(ex, "Error creating product {ProductName}", model?.Name);
                 ModelState.AddModelError("", "An error occurred while creating the product. Please try again.");
             }
 
-            ViewBag.CategoriesSelectList = new SelectList(GetCategories(), "Value", "Text", product.Category);
-            return View(product);
+            model.Categories = GetCategories().Select(c => c.Text).ToList();
+            return View(model);
         }
 
         /// <summary>
@@ -196,6 +283,11 @@ namespace WebApplication2.Controllers
 
                 // Check if user can edit this product (own products, or Support Employee/Admin can edit any)
                 var currentUser = await _userManager.GetUserAsync(User);
+                if (currentUser == null)
+                {
+                    _logger.LogWarning("Current user not found during product edit");
+                    return RedirectToAction("Login", "Account");
+                }
                 var userRoles = await _userManager.GetRolesAsync(currentUser);
                 bool canEditAllProducts = userRoles.Contains("Admin") || userRoles.Contains("Support Employee");
                 
@@ -206,8 +298,10 @@ namespace WebApplication2.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                ViewBag.CategoriesSelectList = new SelectList(GetCategories(), "Value", "Text", product.Category);
-                return View(product);
+                var editViewModel = _mapper.Map<ProductEditViewModel>(product);
+                editViewModel.Categories = GetCategories().Select(c => c.Text).ToList();
+                
+                return View(editViewModel);
             }
             catch (Exception ex)
             {
@@ -222,15 +316,18 @@ namespace WebApplication2.Controllers
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Category,ProductDate,UserId")] Product product)
+        public async Task<IActionResult> Edit(int id, ProductEditViewModel model, IFormFile? productImage)
         {
             try
             {
-                if (id != product.Id)
+                if (id != model.Id)
                 {
-                    _logger.LogWarning("Product ID mismatch: URL ID {UrlId}, Product ID {ProductId}", id, product.Id);
+                    _logger.LogWarning("Product ID mismatch: URL ID {UrlId}, Product ID {ProductId}", id, model.Id);
                     return NotFound();
                 }
+
+                // Map view model to entity
+                var product = _mapper.Map<Product>(model);
 
                 var userId = GetCurrentUserId();
                 if (string.IsNullOrEmpty(userId))
@@ -241,18 +338,73 @@ namespace WebApplication2.Controllers
 
                 // Check if user can edit this product (own products, or Support Employee/Admin can edit any)
                 var currentUser = await _userManager.GetUserAsync(User);
+                if (currentUser == null)
+                {
+                    _logger.LogWarning("Current user not found during product update");
+                    return RedirectToAction("Login", "Account");
+                }
                 var userRoles = await _userManager.GetRolesAsync(currentUser);
                 bool canEditAllProducts = userRoles.Contains("Admin") || userRoles.Contains("Support Employee");
                 
-                if (!canEditAllProducts && product.UserId != userId)
+                if (!canEditAllProducts && model.UserId != userId)
                 {
                     _logger.LogWarning("User {UserId} attempted to update product {ProductId} belonging to another user", userId, id);
                     TempData["ErrorMessage"] = "You can only edit your own products.";
                     return RedirectToAction(nameof(Index));
                 }
 
+                // Get existing product to preserve current image if no new image is uploaded
+                var existingProduct = await _context.Products.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
+                if (existingProduct == null)
+                {
+                    _logger.LogWarning("Product {ProductId} not found during update", id);
+                    return NotFound();
+                }
+
+                // Handle file upload if provided
+                if (productImage != null)
+                {
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
+                     var validationResult = _fileUploadService.ValidateFile(productImage, allowedExtensions, 5);
+                    if (!validationResult.IsValid)
+                    {
+                        ModelState.AddModelError("productImage", validationResult.ErrorMessage);
+                        model.Categories = GetCategories().Select(c => c.Text).ToList();
+                        return View(model);
+                    }
+
+                    try
+                    {
+                        // Delete old image if it exists
+                        if (!string.IsNullOrEmpty(existingProduct.ImagePath))
+                        {
+                            await _fileUploadService.DeleteFileAsync(existingProduct.ImagePath);
+                            _logger.LogInformation("Old product image deleted: {ImagePath}", existingProduct.ImagePath);
+                        }
+
+                        // Upload new image
+                        var uploadResult = await _fileUploadService.UploadFileAsync(productImage, "products");
+                        product.ImagePath = uploadResult;
+                        product.ImageFileName = productImage.FileName;
+                        _logger.LogInformation("Product image uploaded successfully: {ImagePath}", uploadResult);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error uploading product image");
+                        ModelState.AddModelError("productImage", "Failed to upload image. Please try again.");
+                        model.Categories = GetCategories().Select(c => c.Text).ToList();
+                        return View(model);
+                    }
+                }
+                else
+                {
+                    // Preserve existing image data if no new image is uploaded
+                    product.ImagePath = existingProduct.ImagePath;
+                    product.ImageFileName = existingProduct.ImageFileName;
+                }
+
                 // Validate product date is not in the future
-                if (product.ProductDate > DateTime.Now)
+                if (model.ProductDate > DateTime.Now)
                 {
                     ModelState.AddModelError("ProductDate", "Production date cannot be in the future.");
                 }
@@ -263,6 +415,22 @@ namespace WebApplication2.Controllers
                     {
                         _context.Update(product);
                         await _context.SaveChangesAsync();
+                        
+                        // Invalidate product cache
+                        _cachingService.Remove(CacheKeys.ProductsList);
+                        _cachingService.Remove(string.Format(CacheKeys.ProductsListByCategory, userId));
+                        _cachingService.RemoveByPrefix("products_filtered_");
+                        _cachingService.Remove(CacheKeys.DashboardAnalytics);
+                        _cachingService.Remove(CacheKeys.ProductTrends);
+                        _cachingService.RemoveByPrefix(CacheKeys.ProductAnalytics.Replace("{0}", ""));
+                        
+                        // Create notification for successful product update
+                        await _notificationService.CreateNotificationAsync(
+                            userId,
+                            "Product Updated",
+                            $"Your product '{product.Name}' has been successfully updated.",
+                            NotificationType.Info
+                        );
                         
                         _logger.LogInformation("Product {ProductName} updated successfully by user {UserId}", product.Name, userId);
                         TempData["SuccessMessage"] = "Product updated successfully!";
@@ -289,9 +457,8 @@ namespace WebApplication2.Controllers
                 ModelState.AddModelError("", "An error occurred while updating the product. Please try again.");
             }
 
-            ViewBag.CategoriesSelectList = new SelectList(GetCategories(), "Value", "Text", product.Category);
-            //ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id", product.UserId);
-            return View(product);
+            model.Categories = GetCategories().Select(c => c.Text).ToList();
+            return View(model);
         }
 
         /// <summary>
@@ -386,8 +553,31 @@ namespace WebApplication2.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
+                // Delete associated image file if it exists
+                if (!string.IsNullOrEmpty(product.ImagePath))
+                {
+                    try
+                    {
+                        await _fileUploadService.DeleteFileAsync(product.ImagePath);
+                        _logger.LogInformation("Product image deleted: {ImagePath}", product.ImagePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to delete product image: {ImagePath}", product.ImagePath);
+                        // Continue with product deletion even if image deletion fails
+                    }
+                }
+
                 _context.Products.Remove(product);
                 await _context.SaveChangesAsync();
+                
+                // Create notification for successful product deletion
+                await _notificationService.CreateNotificationAsync(
+                    userId,
+                    "Product Deleted",
+                    $"Your product '{product.Name}' has been successfully deleted.",
+                    NotificationType.Warning
+                );
                 
                 _logger.LogInformation("Product {ProductName} deleted by user {UserId} with roles {Roles}", product.Name, userId, string.Join(", ", userRoles));
                 TempData["SuccessMessage"] = "Product deleted successfully!";

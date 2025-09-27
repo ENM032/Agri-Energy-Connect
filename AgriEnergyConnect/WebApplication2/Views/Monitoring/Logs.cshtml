@@ -1,0 +1,396 @@
+@model WebApplication2.Models.ViewModels.LogFilterViewModel
+@{
+    ViewData["Title"] = "System Logs";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0 text-gray-800">
+                    <i class="fas fa-list-alt mr-2"></i>
+                    System Logs
+                </h1>
+                <div class="btn-group" role="group">
+                    <a href="@Url.Action("Index", "Monitoring")" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                    <button type="button" class="btn btn-outline-primary" id="refreshLogsBtn">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-filter mr-2"></i>
+                        Log Filters
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="get" id="logFilterForm">
+                        <div class="row">
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="Level">Log Level</label>
+                                    <select class="form-control" id="Level" name="Level">
+                                        <option value="">All Levels</option>
+                                        <option value="Error" selected="@(Model.Level == "Error")">Error</option>
+                                        <option value="Warning" selected="@(Model.Level == "Warning")">Warning</option>
+                                        <option value="Information" selected="@(Model.Level == "Information")">Information</option>
+                                        <option value="Debug" selected="@(Model.Level == "Debug")">Debug</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="Logger">Logger</label>
+                                    <input type="text" class="form-control" id="Logger" name="Logger" 
+                                           value="@Model.Logger" placeholder="Logger name...">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="StartDate">Start Date</label>
+                                    <input type="datetime-local" class="form-control" id="StartDate" name="StartDate" 
+                                           value="@(Model.StartDate?.ToString("yyyy-MM-ddTHH:mm"))">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="EndDate">End Date</label>
+                                    <input type="datetime-local" class="form-control" id="EndDate" name="EndDate" 
+                                           value="@(Model.EndDate?.ToString("yyyy-MM-ddTHH:mm"))">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="SearchTerm">Search</label>
+                                    <input type="text" class="form-control" id="SearchTerm" name="SearchTerm" 
+                                           value="@Model.SearchTerm" placeholder="Search in messages...">
+                                </div>
+                            </div>
+                            <div class="col-md-1">
+                                <div class="form-group">
+                                    <label>&nbsp;</label>
+                                    <div>
+                                        <button type="submit" class="btn btn-primary btn-block">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="PageSize">Page Size</label>
+                                    <select class="form-control" id="PageSize" name="PageSize">
+                                        <option value="25" selected="@(Model.PageSize == 25)">25</option>
+                                        <option value="50" selected="@(Model.PageSize == 50)">50</option>
+                                        <option value="100" selected="@(Model.PageSize == 100)">100</option>
+                                        <option value="200" selected="@(Model.PageSize == 200)">200</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-10">
+                                <div class="form-group">
+                                    <label>&nbsp;</label>
+                                    <div>
+                                        <button type="button" class="btn btn-outline-secondary" id="clearFiltersBtn">
+                                            <i class="fas fa-times"></i> Clear Filters
+                                        </button>
+                                        <button type="button" class="btn btn-outline-info" id="exportLogsBtn">
+                                            <i class="fas fa-download"></i> Export Logs
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="Page" value="@Model.Page">
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logs Table Card -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-table mr-2"></i>
+                        Log Entries
+                        <span class="badge badge-secondary ml-2" id="logCount">Loading...</span>
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive" id="logsTableContainer">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Loading logs...</p>
+                        </div>
+                    </div>
+
+                    <!-- Pagination -->
+                    <nav aria-label="Log pagination" id="paginationContainer" style="display: none;">
+                        <ul class="pagination justify-content-center">
+                            <!-- Pagination will be populated by JavaScript -->
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Log Detail Modal -->
+<div class="modal fade" id="logDetailModal" tabindex="-1" role="dialog" aria-labelledby="logDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="logDetailModalLabel">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Log Entry Details
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="logDetailContent">
+                <!-- Log details will be populated here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Load logs on page load
+            loadLogs();
+
+            // Refresh button
+            $('#refreshLogsBtn').click(function() {
+                loadLogs();
+            });
+
+            // Clear filters button
+            $('#clearFiltersBtn').click(function() {
+                $('#logFilterForm')[0].reset();
+                $('input[name="Page"]').val(1);
+                loadLogs();
+            });
+
+            // Export logs button
+            $('#exportLogsBtn').click(function() {
+                exportLogs();
+            });
+
+            // Form submission
+            $('#logFilterForm').submit(function(e) {
+                e.preventDefault();
+                $('input[name="Page"]').val(1); // Reset to first page
+                loadLogs();
+            });
+
+            // Auto-refresh every 30 seconds
+            setInterval(function() {
+                if (!$('#logDetailModal').hasClass('show')) {
+                    loadLogs(true); // Silent refresh
+                }
+            }, 30000);
+        });
+
+        function loadLogs(silent = false) {
+            if (!silent) {
+                $('#refreshLogsBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Loading...');
+                $('#logsTableContainer').html(`
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading logs...</p>
+                    </div>
+                `);
+            }
+
+            const formData = $('#logFilterForm').serialize();
+            
+            // Simulate API call - replace with actual endpoint
+            setTimeout(function() {
+                // Mock data - replace with actual AJAX call
+                const mockLogs = generateMockLogs();
+                displayLogs(mockLogs);
+                
+                if (!silent) {
+                    $('#refreshLogsBtn').prop('disabled', false).html('<i class="fas fa-sync-alt"></i> Refresh');
+                }
+            }, 1000);
+        }
+
+        function generateMockLogs() {
+            const levels = ['Error', 'Warning', 'Information', 'Debug'];
+            const loggers = ['WebApplication2.Controllers.ProductsController', 'WebApplication2.Controllers.HomeController', 'Microsoft.AspNetCore.Hosting.Diagnostics'];
+            const messages = [
+                'User attempted to access unauthorized resource',
+                'Product created successfully with ID: 123',
+                'Database connection established',
+                'File upload completed for user: john@example.com',
+                'Authentication failed for user: invalid@example.com'
+            ];
+
+            const logs = [];
+            for (let i = 0; i < 50; i++) {
+                logs.push({
+                    timestamp: new Date(Date.now() - Math.random() * 86400000).toISOString(),
+                    level: levels[Math.floor(Math.random() * levels.length)],
+                    logger: loggers[Math.floor(Math.random() * loggers.length)],
+                    message: messages[Math.floor(Math.random() * messages.length)]
+                });
+            }
+            return logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        }
+
+        function displayLogs(logs) {
+            let tableHtml = `
+                <table class="table table-striped table-hover">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th style="width: 150px;">Timestamp</th>
+                            <th style="width: 100px;">Level</th>
+                            <th style="width: 200px;">Logger</th>
+                            <th>Message</th>
+                            <th style="width: 80px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            logs.forEach(function(log, index) {
+                const levelClass = getLevelClass(log.level);
+                const levelIcon = getLevelIcon(log.level);
+                const timestamp = new Date(log.timestamp);
+                
+                tableHtml += `
+                    <tr>
+                        <td class="text-nowrap">
+                            <small>${timestamp.toLocaleString()}</small>
+                        </td>
+                        <td>
+                            <span class="badge badge-${levelClass}">
+                                <i class="${levelIcon}"></i>
+                                ${log.level}
+                            </span>
+                        </td>
+                        <td>
+                            <small class="text-muted">${log.logger}</small>
+                        </td>
+                        <td>
+                            <span class="log-message" data-toggle="tooltip" title="${log.message}">
+                                ${log.message.length > 100 ? log.message.substring(0, 100) + '...' : log.message}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-info" onclick="showLogDetail(${index})" data-toggle="tooltip" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tableHtml += `
+                    </tbody>
+                </table>
+            `;
+
+            $('#logsTableContainer').html(tableHtml);
+            $('#logCount').text(`${logs.length} entries`);
+            
+            // Initialize tooltips
+            $('[data-toggle="tooltip"]').tooltip();
+            
+            // Store logs for detail view
+            window.currentLogs = logs;
+        }
+
+        function getLevelClass(level) {
+            switch (level.toLowerCase()) {
+                case 'error': return 'danger';
+                case 'warning': return 'warning';
+                case 'information': return 'info';
+                case 'debug': return 'secondary';
+                default: return 'light';
+            }
+        }
+
+        function getLevelIcon(level) {
+            switch (level.toLowerCase()) {
+                case 'error': return 'fas fa-exclamation-circle';
+                case 'warning': return 'fas fa-exclamation-triangle';
+                case 'information': return 'fas fa-info-circle';
+                case 'debug': return 'fas fa-bug';
+                default: return 'fas fa-circle';
+            }
+        }
+
+        function showLogDetail(index) {
+            const log = window.currentLogs[index];
+            const timestamp = new Date(log.timestamp);
+            
+            const detailHtml = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Timestamp:</strong><br>
+                        <span class="text-muted">${timestamp.toLocaleString()}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Level:</strong><br>
+                        <span class="badge badge-${getLevelClass(log.level)}">
+                            <i class="${getLevelIcon(log.level)}"></i>
+                            ${log.level}
+                        </span>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-12">
+                        <strong>Logger:</strong><br>
+                        <span class="text-muted">${log.logger}</span>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-12">
+                        <strong>Message:</strong><br>
+                        <div class="bg-light p-3 rounded">
+                            <pre class="mb-0">${log.message}</pre>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            $('#logDetailContent').html(detailHtml);
+            $('#logDetailModal').modal('show');
+        }
+
+        function exportLogs() {
+            // Implement log export functionality
+            alert('Export functionality would be implemented here');
+        }
+    </script>
+}
