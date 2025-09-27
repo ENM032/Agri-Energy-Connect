@@ -1,6 +1,6 @@
+@model WebApplication2.Models.ViewModels.DashboardViewModel
 @{
     ViewData["Title"] = "Admin Dashboard";
-    var dashboardData = ViewBag.DashboardData;
 }
 
 <div class="container-fluid">
@@ -20,7 +20,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4 class="card-title">@dashboardData.TotalUsers</h4>
+                            <h4 class="card-title">@Model.TotalUsers</h4>
                             <p class="card-text">Total Users</p>
                         </div>
                         <div class="align-self-center">
@@ -36,7 +36,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4 class="card-title">@dashboardData.FarmersCount</h4>
+                            <h4 class="card-title">@Model.TotalFarmers</h4>
                             <p class="card-text">Farmers</p>
                         </div>
                         <div class="align-self-center">
@@ -52,7 +52,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4 class="card-title">@dashboardData.SupportEmployeesCount</h4>
+                            <h4 class="card-title">@Model.TotalSupportEmployees</h4>
                             <p class="card-text">Support Staff</p>
                         </div>
                         <div class="align-self-center">
@@ -68,7 +68,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4 class="card-title">@dashboardData.TotalProducts</h4>
+                            <h4 class="card-title">@Model.TotalProducts</h4>
                             <p class="card-text">Total Products</p>
                         </div>
                         <div class="align-self-center">
@@ -146,19 +146,19 @@
                     <div class="mb-2">
                         <div class="d-flex justify-content-between">
                             <span>Admins</span>
-                            <span class="badge bg-danger">@dashboardData.AdminsCount</span>
+                            <span class="badge bg-danger">@Model.TotalAdmins</span>
                         </div>
                     </div>
                     <div class="mb-2">
                         <div class="d-flex justify-content-between">
                             <span>Support Employees</span>
-                            <span class="badge bg-info">@dashboardData.SupportEmployeesCount</span>
+                            <span class="badge bg-info">@Model.TotalSupportEmployees</span>
                         </div>
                     </div>
                     <div class="mb-2">
                         <div class="d-flex justify-content-between">
                             <span>Farmers</span>
-                            <span class="badge bg-success">@dashboardData.FarmersCount</span>
+                            <span class="badge bg-success">@Model.TotalFarmers</span>
                         </div>
                     </div>
                 </div>

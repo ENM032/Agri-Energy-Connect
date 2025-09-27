@@ -1,4 +1,4 @@
-@model WebApplication2.Models.ApplicationUser
+@model WebApplication2.Models.ViewModels.UserProfileViewModel
 @{
     ViewData["Title"] = "Delete User";
 }
@@ -20,7 +20,7 @@
 
                     <div class="row mb-3">
                         <div class="col-sm-3"><strong>Display Name:</strong></div>
-                        <div class="col-sm-9">@Model.Displayname</div>
+                        <div class="col-sm-9">@Model.DisplayName</div>
                     </div>
                     <div class="row mb-3">
                         <div class="col-sm-3"><strong>Email:</strong></div>
@@ -33,9 +33,9 @@
                     <div class="row mb-3">
                         <div class="col-sm-3"><strong>Roles:</strong></div>
                         <div class="col-sm-9">
-                            @if (ViewBag.UserRoles != null)
+                            @if (Model.Roles != null && Model.Roles.Any())
                             {
-                                @foreach (string role in ViewBag.UserRoles)
+                                @foreach (string role in Model.Roles)
                                 {
                                     <span class="badge bg-primary me-1">@role</span>
                                 }
@@ -44,10 +44,10 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col-sm-3"><strong>Registration Date:</strong></div>
-                        <div class="col-sm-9">@Model.RegistrationDate.ToString("MMM dd, yyyy")</div>
+                        <div class="col-sm-9">@Model.FormattedCreatedDate</div>
                     </div>
 
-                    @if (ViewBag.UserRoles != null && ((IList<string>)ViewBag.UserRoles).Contains("Farmer"))
+                    @if (Model.Roles != null && Model.Roles.Contains("Farmer"))
                     {
                         <div class="alert alert-warning mt-3" role="alert">
                             <i class="fas fa-info-circle me-2"></i>
@@ -80,7 +80,7 @@
     <script>
         // Additional confirmation for critical action
         document.querySelector('form[asp-action="DeleteUser"]').addEventListener('submit', function(e) {
-            if (!confirm('FINAL CONFIRMATION: Delete user "@Model.Displayname"? This action is irreversible.')) {
+            if (!confirm('FINAL CONFIRMATION: Delete user "@Model.DisplayName"? This action is irreversible.')) {
                 e.preventDefault();
             }
         });

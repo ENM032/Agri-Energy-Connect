@@ -6,6 +6,9 @@ using System.ComponentModel.DataAnnotations;
 using WebApplication2.Areas.Identity.Data;
 using WebApplication2.Data;
 using WebApplication2.Models;
+using WebApplication2.Models.ViewModels;
+using WebApplication2.Services;
+using AutoMapper;
 
 namespace WebApplication2.Controllers
 {
@@ -19,17 +22,23 @@ namespace WebApplication2.Controllers
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly WebApplication2Context _context;
         private readonly ILogger<AdminController> _logger;
+        private readonly INotificationService _notificationService;
+        private readonly IMapper _mapper;
 
         public AdminController(
             UserManager<WebApplication2User> userManager,
             RoleManager<IdentityRole> roleManager,
             WebApplication2Context context,
-            ILogger<AdminController> logger)
+            ILogger<AdminController> logger,
+            INotificationService notificationService,
+            IMapper mapper)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _context = context;
             _logger = logger;
+            _notificationService = notificationService;
+            _mapper = mapper;
         }
 
         /// <summary>
@@ -42,22 +51,40 @@ namespace WebApplication2.Controllers
             {
                 var totalUsers = await _userManager.Users.CountAsync();
                 var totalProducts = await _context.Products.CountAsync();
+                var totalNotifications = await _context.Notifications.CountAsync();
                 var farmers = await _userManager.GetUsersInRoleAsync("Farmer");
                 var supportEmployees = await _userManager.GetUsersInRoleAsync("Support Employee");
                 var admins = await _userManager.GetUsersInRoleAsync("Admin");
 
-                var dashboardData = new
+                // Get recent activities (last 10 products)
+                var recentProducts = await _context.Products
+                    .Include(p => p.User)
+                    .OrderByDescending(p => p.ProductDate)
+                    .Take(10)
+                    .ToListAsync();
+
+                var recentActivities = recentProducts.Select(p => new RecentActivityItem
+                {
+                    Description = $"New product '{p.Name}' added by {p.User?.Displayname ?? "Unknown"}",
+                    Timestamp = p.ProductDate,
+                    Type = "Product"
+                }).ToList();
+
+                var dashboardViewModel = new DashboardViewModel
                 {
                     TotalUsers = totalUsers,
                     TotalProducts = totalProducts,
-                    FarmersCount = farmers.Count,
-                    SupportEmployeesCount = supportEmployees.Count,
-                    AdminsCount = admins.Count
+                    TotalNotifications = totalNotifications,
+                    TotalFarmers = farmers.Count,
+                    TotalSupportEmployees = supportEmployees.Count,
+                    TotalAdmins = admins.Count,
+                    RecentActivities = recentActivities,
+                    SystemHealth = "Good", // This could be calculated based on various metrics
+                    ActiveUsersToday = await _userManager.Users.CountAsync() // Simplified - could track actual login activity
                 };
 
-                ViewBag.DashboardData = dashboardData;
                 _logger.LogInformation("Admin dashboard accessed");
-                return View();
+                return View(dashboardViewModel);
             }
             catch (Exception ex)
             {
@@ -76,21 +103,34 @@ namespace WebApplication2.Controllers
             try
             {
                 var users = await _userManager.Users.ToListAsync();
-                var userRoles = new List<object>();
+                var userViewModels = new List<UserProfileViewModel>();
 
                 foreach (var user in users)
                 {
                     var roles = await _userManager.GetRolesAsync(user);
-                    userRoles.Add(new
+                    var userViewModel = new UserProfileViewModel
                     {
-                        User = user,
-                        Roles = roles
-                    });
+                        Id = user.Id,
+                        UserName = user.UserName ?? string.Empty,
+                        Email = user.Email ?? string.Empty,
+                        DisplayName = user.Displayname ?? string.Empty,
+                        Roles = roles.ToList(),
+                        EmailConfirmed = user.EmailConfirmed,
+                        LockoutEnabled = user.LockoutEnabled,
+                        LockoutEnd = user.LockoutEnd,
+                        CreatedDate = DateTime.UtcNow // This should be from user creation date if available
+                    };
+                    userViewModels.Add(userViewModel);
                 }
 
-                ViewBag.UserRoles = userRoles;
+                var viewModel = new UserManagementViewModel
+                {
+                    Users = userViewModels,
+                    TotalUsers = userViewModels.Count
+                };
+
                 _logger.LogInformation("Admin accessed user management");
-                return View();
+                return View(viewModel);
             }
             catch (Exception ex)
             {
@@ -113,8 +153,19 @@ namespace WebApplication2.Controllers
                     .OrderByDescending(p => p.ProductDate)
                     .ToListAsync();
 
+                var today = DateTime.Today;
+                var startOfWeek = today.AddDays(-(int)today.DayOfWeek);
+
+                var viewModel = new ManageProductsViewModel
+                {
+                    Products = _mapper.Map<List<ProductViewModel>>(products),
+                    TotalProducts = products.Count,
+                    ProductsCreatedToday = products.Count(p => p.ProductDate.Date == today),
+                    ProductsCreatedThisWeek = products.Count(p => p.ProductDate.Date >= startOfWeek)
+                };
+
                 _logger.LogInformation("Admin accessed product management");
-                return View(products);
+                return View(viewModel);
             }
             catch (Exception ex)
             {
@@ -174,6 +225,14 @@ namespace WebApplication2.Controllers
                     // Assign Admin role
                     await _userManager.AddToRoleAsync(adminUser, "Admin");
                     
+                    // Create welcome notification for new Admin
+                    await _notificationService.CreateNotificationAsync(
+                        adminUser.Id,
+                        "Welcome to AgriEnergyConnect Admin Panel!",
+                        $"Welcome {model.DisplayName}! Your Admin account has been created. You now have full administrative access to manage the platform.",
+                        NotificationType.Success
+                    );
+                    
                     _logger.LogInformation($"New admin user created: {model.Email}");
                     TempData["SuccessMessage"] = $"Admin user '{model.DisplayName}' created successfully.";
                     return RedirectToAction(nameof(ManageUsers));
@@ -220,9 +279,21 @@ namespace WebApplication2.Controllers
 
                 // Get user roles for display
                 var roles = await _userManager.GetRolesAsync(user);
-                ViewBag.UserRoles = roles;
+                
+                var userViewModel = new UserProfileViewModel
+                {
+                    Id = user.Id,
+                    UserName = user.UserName ?? string.Empty,
+                    Email = user.Email ?? string.Empty,
+                    DisplayName = user.Displayname ?? string.Empty,
+                    Roles = roles.ToList(),
+                    EmailConfirmed = user.EmailConfirmed,
+                    LockoutEnabled = user.LockoutEnabled,
+                    LockoutEnd = user.LockoutEnd,
+                    CreatedDate = DateTime.UtcNow // This should be from user creation date if available
+                };
 
-                return View(user);
+                return View(userViewModel);
             }
             catch (Exception ex)
             {

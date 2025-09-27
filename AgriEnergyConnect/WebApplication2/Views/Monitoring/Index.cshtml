@@ -1,0 +1,344 @@
+@model WebApplication2.Models.ViewModels.MonitoringDashboardViewModel
+@{
+    ViewData["Title"] = "System Monitoring Dashboard";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0 text-gray-800">
+                    <i class="fas fa-tachometer-alt mr-2"></i>
+                    System Monitoring Dashboard
+                </h1>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary" id="refreshBtn">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="autoRefreshBtn" data-auto="false">
+                        <i class="fas fa-play"></i> Auto Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Health Checks Row -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-heartbeat mr-2"></i>
+                        Health Checks
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row" id="healthChecksContainer">
+                        @foreach (var healthCheck in Model.HealthChecks)
+                        {
+                            <div class="col-md-4 mb-3">
+                                <div class="card border-left-@(healthCheck.Status.ToLower() == "healthy" ? "success" : healthCheck.Status.ToLower() == "warning" ? "warning" : "danger")">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold @healthCheck.StatusCssClass text-uppercase mb-1">
+                                                    @healthCheck.Name
+                                                </div>
+                                                <div class="h5 mb-0 font-weight-bold @healthCheck.StatusCssClass">
+                                                    <i class="@healthCheck.StatusIcon mr-1"></i>
+                                                    @healthCheck.Status
+                                                </div>
+                                                <div class="text-xs text-gray-500 mt-1">
+                                                    @healthCheck.Description
+                                                </div>
+                                                <div class="text-xs text-gray-400 mt-1">
+                                                    Last checked: @healthCheck.LastChecked.ToString("HH:mm:ss")
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics Row -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-line mr-2"></i>
+                        Performance Metrics
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row" id="performanceMetricsContainer">
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-primary shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                Memory Usage
+                                            </div>
+                                            <div class="h5 mb-0 font-weight-bold @Model.PerformanceMetrics.MemoryUsageClass">
+                                                @Model.PerformanceMetrics.MemoryUsageFormatted
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-memory fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-success shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                                CPU Time
+                                            </div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                                @Model.PerformanceMetrics.CpuTimeFormatted
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-microchip fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-info shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                                Uptime
+                                            </div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                                @Model.PerformanceMetrics.UptimeFormatted
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-warning shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                                Threads
+                                            </div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                                @Model.PerformanceMetrics.ThreadCount
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-tasks fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Information and Recent Logs Row -->
+    <div class="row">
+        <!-- System Information -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-server mr-2"></i>
+                        System Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <td><strong>Environment:</strong></td>
+                                    <td>
+                                        <span class="badge @Model.SystemInfo.EnvironmentBadgeClass">
+                                            @Model.SystemInfo.Environment
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Machine:</strong></td>
+                                    <td>@Model.SystemInfo.MachineName</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>OS Version:</strong></td>
+                                    <td>@Model.SystemInfo.OSVersion</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Processors:</strong></td>
+                                    <td>@Model.SystemInfo.ProcessorCount</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>.NET Version:</strong></td>
+                                    <td>@Model.SystemInfo.DotNetVersion</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Start Time:</strong></td>
+                                    <td>@Model.SystemInfo.StartTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Logs -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-list mr-2"></i>
+                        Recent Logs
+                    </h6>
+                    <a href="@Url.Action("Logs", "Monitoring")" class="btn btn-sm btn-outline-primary">
+                        View All Logs
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;" id="recentLogsContainer">
+                        <table class="table table-sm">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Level</th>
+                                    <th>Logger</th>
+                                    <th>Message</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var log in Model.RecentLogs.Take(20))
+                                {
+                                    <tr>
+                                        <td class="text-nowrap">
+                                            <small>@log.Timestamp.ToString("HH:mm:ss")</small>
+                                        </td>
+                                        <td>
+                                            <span class="@log.LevelCssClass">
+                                                <i class="@log.LevelIcon"></i>
+                                                @log.Level
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">@log.Logger</small>
+                                        </td>
+                                        <td>
+                                            <small>@log.Message</small>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        @if (!Model.RecentLogs.Any())
+                        {
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-info-circle"></i>
+                                No recent logs available
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let autoRefreshInterval;
+        let isAutoRefreshing = false;
+
+        $(document).ready(function() {
+            // Manual refresh button
+            $('#refreshBtn').click(function() {
+                refreshDashboard();
+            });
+
+            // Auto refresh toggle
+            $('#autoRefreshBtn').click(function() {
+                toggleAutoRefresh();
+            });
+
+            // Initial load
+            refreshDashboard();
+        });
+
+        function refreshDashboard() {
+            // Show loading state
+            $('#refreshBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Refreshing...');
+
+            // Refresh health checks
+            $.get('@Url.Action("GetHealthStatus", "Monitoring")', function(data) {
+                updateHealthChecks(data);
+            });
+
+            // Refresh performance metrics
+            $.get('@Url.Action("PerformanceMetrics", "Monitoring")', function(data) {
+                updatePerformanceMetrics(data);
+            });
+
+            // Reset button state
+            setTimeout(function() {
+                $('#refreshBtn').prop('disabled', false).html('<i class="fas fa-sync-alt"></i> Refresh');
+            }, 1000);
+        }
+
+        function toggleAutoRefresh() {
+            const btn = $('#autoRefreshBtn');
+            
+            if (isAutoRefreshing) {
+                clearInterval(autoRefreshInterval);
+                isAutoRefreshing = false;
+                btn.removeClass('btn-success').addClass('btn-outline-secondary')
+                   .html('<i class="fas fa-play"></i> Auto Refresh');
+            } else {
+                autoRefreshInterval = setInterval(refreshDashboard, 30000); // Refresh every 30 seconds
+                isAutoRefreshing = true;
+                btn.removeClass('btn-outline-secondary').addClass('btn-success')
+                   .html('<i class="fas fa-pause"></i> Stop Auto Refresh');
+            }
+        }
+
+        function updateHealthChecks(healthChecks) {
+            // Update health checks display
+            // This would be implemented based on the returned data structure
+        }
+
+        function updatePerformanceMetrics(metrics) {
+            // Update performance metrics display
+            // This would be implemented based on the returned data structure
+        }
+    </script>
+}

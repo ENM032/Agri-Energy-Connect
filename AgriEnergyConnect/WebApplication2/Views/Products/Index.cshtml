@@ -1,4 +1,4 @@
-@model IEnumerable<WebApplication2.Models.Product>
+@model WebApplication2.Models.ViewModels.ProductIndexViewModel
 
 @{
     ViewData["Title"] = "My Products";
@@ -45,8 +45,32 @@
 
     <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
-    @if (Model != null && Model.Any())
+    @if (Model?.Products != null && Model.Products.Any())
     {
+        <!-- Results Summary and Page Size Selector -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <p class="text-muted mb-0">
+                    Showing @((Model.CurrentPage - 1) * Model.PageSize + 1) to @(Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalProducts)) of @Model.TotalProducts products
+                </p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <form method="get" asp-action="Index" class="d-inline-flex align-items-center">
+                    <input type="hidden" name="searchName" value="@Model.SearchName" />
+                    <input type="hidden" name="categoryFilter" value="@Model.CategoryFilter" />
+                    <input type="hidden" name="dateFrom" value="@(Model.DateFrom?.ToString("yyyy-MM-dd"))" />
+                    <input type="hidden" name="dateTo" value="@(Model.DateTo?.ToString("yyyy-MM-dd"))" />
+                    <label for="pageSize" class="form-label me-2 mb-0">Show:</label>
+                    <select name="pageSize" id="pageSize" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+                        <option value="5" selected="@(Model.PageSize == 5)">5</option>
+                        <option value="10" selected="@(Model.PageSize == 10)">10</option>
+                        <option value="20" selected="@(Model.PageSize == 20)">20</option>
+                        <option value="50" selected="@(Model.PageSize == 50)">50</option>
+                    </select>
+                </form>
+            </div>
+        </div>
+
         <!-- Filter Section -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-light">
@@ -56,30 +80,32 @@
             </div>
             <div class="card-body">
                 <form method="get" asp-action="Index">
+                    <input type="hidden" name="pageSize" value="@Model.PageSize" />
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label for="searchName" class="form-label">Product Name</label>
-                            <input type="text" class="form-control" id="searchName" name="searchName" placeholder="Search by name..." value="@ViewBag.SearchName" />
+                            <input type="text" class="form-control" id="searchName" name="searchName" placeholder="Search by name..." value="@Model.SearchName" />
                         </div>
                         <div class="col-md-3">
                             <label for="categoryFilter" class="form-label">Category</label>
                             <select class="form-select" id="categoryFilter" name="categoryFilter">
                                 <option value="">All Categories</option>
-                                <option value="Cereals" selected="@(ViewBag.CategoryFilter == "Cereals")">Cereals</option>
-                                <option value="Seeds" selected="@(ViewBag.CategoryFilter == "Seeds")">Seeds</option>
-                                <option value="Pulses" selected="@(ViewBag.CategoryFilter == "Pulses")">Pulses</option>
-                                <option value="Fruits" selected="@(ViewBag.CategoryFilter == "Fruits")">Fruits</option>
-                                <option value="Vegetables" selected="@(ViewBag.CategoryFilter == "Vegetables")">Vegetables</option>
-                                <option value="Herbs & Spices" selected="@(ViewBag.CategoryFilter == "Herbs & Spices")">Herbs & Spices</option>
+                                @if (Model.Categories != null)
+                                {
+                                    @foreach (var category in Model.Categories)
+                                    {
+                                        <option value="@category" selected="@(Model.CategoryFilter == category)">@category</option>
+                                    }
+                                }
                             </select>
                         </div>
                         <div class="col-md-3">
                             <label for="dateFrom" class="form-label">Date From</label>
-                            <input type="date" class="form-control" id="dateFrom" name="dateFrom" value="@ViewBag.DateFrom" />
+                            <input type="date" class="form-control" id="dateFrom" name="dateFrom" value="@(Model.DateFrom?.ToString("yyyy-MM-dd"))" />
                         </div>
                         <div class="col-md-2">
                             <label for="dateTo" class="form-label">Date To</label>
-                            <input type="date" class="form-control" id="dateTo" name="dateTo" value="@ViewBag.DateTo" />
+                            <input type="date" class="form-control" id="dateTo" name="dateTo" value="@(Model.DateTo?.ToString("yyyy-MM-dd"))" />
                         </div>
                     </div>
                     <div class="row mt-3">
@@ -97,10 +123,23 @@
         </div>
         <!-- Products Grid -->
         <div class="row">
-            @foreach (var item in Model)
+            @foreach (var item in Model.Products)
             {
                 <div class="col-lg-4 col-md-6 mb-4">
                     <div class="card h-100 border-0 shadow-sm hover-lift">
+                        <div class="card-img-top-container" style="height: 200px; overflow: hidden; background-color: #f8f9fa; display: flex; align-items: center; justify-content: center;">
+                            @if (!string.IsNullOrEmpty(item.ImagePath))
+                            {
+                                <img src="~/uploads/@item.ImagePath" alt="@item.Name" class="img-fluid" style="max-height: 100%; max-width: 100%; object-fit: cover;" />
+                            }
+                            else
+                            {
+                                <div class="text-muted text-center">
+                                    <i class="fas fa-image fa-3x mb-2"></i>
+                                    <p class="mb-0">No Image</p>
+                                </div>
+                            }
+                        </div>
                         <div class="card-header bg-light border-0">
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="badge bg-primary rounded-pill">@item.Category</span>
@@ -141,22 +180,35 @@
                     <table class="table table-hover mb-0">
                         <thead class="table-light">
                             <tr>
+                                <th class="border-0">Image</th>
                                 <th class="border-0">
-                                    <i class="bi bi-box me-1"></i>@Html.DisplayNameFor(model => model.Name)
+                                    <i class="bi bi-box me-1"></i>Product Name
                                 </th>
                                 <th class="border-0">
-                                    <i class="bi bi-tag me-1"></i>@Html.DisplayNameFor(model => model.Category)
+                                    <i class="bi bi-tag me-1"></i>Category
                                 </th>
                                 <th class="border-0">
-                                    <i class="bi bi-calendar3 me-1"></i>@Html.DisplayNameFor(model => model.ProductDate)
+                                    <i class="bi bi-calendar3 me-1"></i>Date
                                 </th>
                                 <th class="border-0 text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var item in Model)
+                            @foreach (var item in Model.Products)
                             {
                                 <tr>
+                                    <td class="align-middle">
+                                        <div style="width: 60px; height: 60px; overflow: hidden; border-radius: 8px; background-color: #f8f9fa; display: flex; align-items: center; justify-content: center;">
+                                            @if (!string.IsNullOrEmpty(item.ImagePath))
+                                            {
+                                                <img src="~/uploads/@item.ImagePath" alt="@item.Name" style="width: 100%; height: 100%; object-fit: cover;" />
+                                            }
+                                            else
+                                            {
+                                                <i class="fas fa-image text-muted"></i>
+                                            }
+                                        </div>
+                                    </td>
                                     <td class="align-middle">
                                         <strong>@Html.DisplayFor(modelItem => item.Name)</strong>
                                     </td>
@@ -183,6 +235,141 @@
                 </div>
             </div>
         </div>
+
+        <!-- Pagination Controls -->
+        @if (Model.TotalPages > 1)
+        {
+            <nav aria-label="Product pagination" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <!-- Previous Page -->
+                    @if (Model.CurrentPage > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" asp-action="Index" 
+                               asp-route-page="@(Model.CurrentPage - 1)"
+                               asp-route-pageSize="@Model.PageSize"
+                               asp-route-searchName="@Model.SearchName"
+                               asp-route-categoryFilter="@Model.CategoryFilter"
+                               asp-route-dateFrom="@(Model.DateFrom?.ToString("yyyy-MM-dd"))"
+                               asp-route-dateTo="@(Model.DateTo?.ToString("yyyy-MM-dd"))">
+                                <i class="bi bi-chevron-left"></i> Previous
+                            </a>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="page-item disabled">
+                            <span class="page-link"><i class="bi bi-chevron-left"></i> Previous</span>
+                        </li>
+                    }
+
+                    <!-- Page Numbers -->
+                    @{
+                        var startPage = Math.Max(1, Model.CurrentPage - 2);
+                        var endPage = Math.Min(Model.TotalPages, Model.CurrentPage + 2);
+                        
+                        // Adjust if we're near the beginning or end
+                        if (endPage - startPage < 4)
+                        {
+                            if (startPage == 1)
+                            {
+                                endPage = Math.Min(Model.TotalPages, startPage + 4);
+                            }
+                            else if (endPage == Model.TotalPages)
+                            {
+                                startPage = Math.Max(1, endPage - 4);
+                            }
+                        }
+                    }
+
+                    @if (startPage > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" asp-action="Index" 
+                               asp-route-page="1"
+                               asp-route-pageSize="@Model.PageSize"
+                               asp-route-searchName="@Model.SearchName"
+                               asp-route-categoryFilter="@Model.CategoryFilter"
+                               asp-route-dateFrom="@(Model.DateFrom?.ToString("yyyy-MM-dd"))"
+                               asp-route-dateTo="@(Model.DateTo?.ToString("yyyy-MM-dd"))">
+                                1
+                            </a>
+                        </li>
+                        @if (startPage > 2)
+                        {
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        }
+                    }
+
+                    @for (int i = startPage; i <= endPage; i++)
+                    {
+                        <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                            @if (i == Model.CurrentPage)
+                            {
+                                <span class="page-link">@i</span>
+                            }
+                            else
+                            {
+                                <a class="page-link" asp-action="Index" 
+                                   asp-route-page="@i"
+                                   asp-route-pageSize="@Model.PageSize"
+                                   asp-route-searchName="@Model.SearchName"
+                                   asp-route-categoryFilter="@Model.CategoryFilter"
+                                   asp-route-dateFrom="@(Model.DateFrom?.ToString("yyyy-MM-dd"))"
+                                   asp-route-dateTo="@(Model.DateTo?.ToString("yyyy-MM-dd"))">
+                                    @i
+                                </a>
+                            }
+                        </li>
+                    }
+
+                    @if (endPage < Model.TotalPages)
+                    {
+                        @if (endPage < Model.TotalPages - 1)
+                        {
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        }
+                        <li class="page-item">
+                            <a class="page-link" asp-action="Index" 
+                               asp-route-page="@Model.TotalPages"
+                               asp-route-pageSize="@Model.PageSize"
+                               asp-route-searchName="@Model.SearchName"
+                               asp-route-categoryFilter="@Model.CategoryFilter"
+                               asp-route-dateFrom="@(Model.DateFrom?.ToString("yyyy-MM-dd"))"
+                               asp-route-dateTo="@(Model.DateTo?.ToString("yyyy-MM-dd"))">
+                                @Model.TotalPages
+                            </a>
+                        </li>
+                    }
+
+                    <!-- Next Page -->
+                    @if (Model.CurrentPage < Model.TotalPages)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" asp-action="Index" 
+                               asp-route-page="@(Model.CurrentPage + 1)"
+                               asp-route-pageSize="@Model.PageSize"
+                               asp-route-searchName="@Model.SearchName"
+                               asp-route-categoryFilter="@Model.CategoryFilter"
+                               asp-route-dateFrom="@(Model.DateFrom?.ToString("yyyy-MM-dd"))"
+                               asp-route-dateTo="@(Model.DateTo?.ToString("yyyy-MM-dd"))">
+                                Next <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="page-item disabled">
+                            <span class="page-link">Next <i class="bi bi-chevron-right"></i></span>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
     }
     else
     {

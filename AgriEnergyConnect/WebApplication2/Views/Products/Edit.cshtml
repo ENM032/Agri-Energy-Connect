@@ -1,54 +1,99 @@
-﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity
 @using WebApplication2.Areas.Identity.Data
 @inject UserManager<WebApplication2User> UserManager
-@model WebApplication2.Models.Product
+@model WebApplication2.Models.ViewModels.ProductEditViewModel
 
 @{
-    ViewData["Title"] = "Edit";
+    ViewData["Title"] = "Edit Product";
 }
 
-<h1>Editing product</h1>
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8 col-xl-6">
+            <div class="card shadow-lg border-0 rounded-4">
+                <div class="card-header bg-gradient text-white text-center py-4 rounded-top-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h2 class="mb-0 fw-bold">
+                        <i class="bi bi-pencil-square me-2"></i>
+                        Edit Product
+                    </h2>
+                    <p class="mb-0 opacity-75">Update your product information</p>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Edit" class="needs-validation" novalidate enctype="multipart/form-data">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                        
+                        <input type="hidden" asp-for="Id" />
+                        
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label fw-semibold">
+                                <i class="bi bi-tag me-1"></i>Product Name
+                            </label>
+                            <input asp-for="Name" class="form-control form-control-lg" placeholder="Enter product name" required />
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                        </div>
 
-<h4>In progress...</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Edit">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="Id" />
-            <div class="form-group">
-                <label asp-for="Name" class="control-label"></label>
-                <input asp-for="Name" class="form-control" />
-                <span asp-validation-for="Name" class="text-danger"></span>
+                        <div class="mb-3">
+                            <label asp-for="Category" class="form-label fw-semibold">
+                                <i class="bi bi-grid me-1"></i>Category
+                            </label>
+                            <select asp-for="Category" class="form-select form-select-lg" required>
+                                <option value="">Select a category</option>
+                                @foreach (var category in Model.AvailableCategories)
+                                {
+                                    <option value="@category" selected="@(Model.Category == category ? "selected" : null)">@category</option>
+                                }
+                            </select>
+                            <span asp-validation-for="Category" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ProductDate" class="form-label fw-semibold">
+                                <i class="bi bi-calendar me-1"></i>Product Date
+                            </label>
+                            <input asp-for="ProductDate" class="form-control form-control-lg" type="date" required />
+                            <span asp-validation-for="ProductDate" class="text-danger"></span>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(Model.CurrentImagePath))
+                        {
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-image me-1"></i>Current Image
+                                </label>
+                                <div class="current-image-container">
+                                    <img src="@Model.CurrentImageUrl" alt="Current product image" class="img-thumbnail" style="max-width: 200px; max-height: 200px;" />
+                                    <p class="text-muted small mt-1">@Model.CurrentImageFileName</p>
+                                </div>
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label for="productImage" class="form-label fw-semibold">
+                                <i class="bi bi-image me-1"></i>@(string.IsNullOrEmpty(Model.CurrentImagePath) ? "Product Image" : "Replace Image")
+                            </label>
+                            <input type="file" class="form-control form-control-lg" id="productImage" name="productImage" accept=".jpg,.jpeg,.png,.gif,.bmp,.webp" />
+                            <div class="form-text">Supported formats: JPG, JPEG, PNG, GIF, BMP, WEBP (Max size: 5MB)</div>
+                            <div class="invalid-feedback">Please select a valid image file.</div>
+                        </div>
+
+                        <!-- Hidden UserId field -->
+                        <input asp-for="UserId" type="hidden" value="@UserManager.GetUserId(User)" />
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a asp-action="Index" class="btn btn-outline-secondary btn-lg me-md-2">
+                                <i class="bi bi-arrow-left me-1"></i>
+                                Back to Products
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-check-circle me-1"></i>
+                                Update Product
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div class="form-group">
-                <label asp-for="Category" class="control-label"></label>
-                <select asp-for="Category" asp-items=ViewBag.CategoriesSelectList class="form-select" id="Category">
-                </select>
-                <span asp-validation-for="Category" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="ProductDate" class="control-label"></label>
-                <input asp-for="ProductDate" class="form-control" />
-                <span asp-validation-for="ProductDate" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="UserId" class="control-label"></label>
-                <input asp-for="UserId" class="form-control" value="@UserManager.GetUserId(User)" readonly />
-                <span asp-validation-for="UserId" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <button type="submit" value="Save" class="btn btn-formpurple">
-                    <i class="bi bi-floppy-fill"></i>
-                    Save
-                </button>
-            </div>
-        </form>
+        </div>
     </div>
-</div>
-
-<div>
-    <a asp-action="Index" class="labelbtn">Back to products</a>
 </div>
 
 @section Scripts {

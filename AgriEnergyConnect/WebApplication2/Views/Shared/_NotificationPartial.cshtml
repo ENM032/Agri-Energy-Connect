@@ -1,0 +1,215 @@
+@{
+    // This partial view will be used to display notification dropdown in the layout
+}
+
+<div class="dropdown" id="notificationDropdown">
+    <button class="btn btn-outline-secondary position-relative" type="button" 
+            data-bs-toggle="dropdown" aria-expanded="false" id="notificationButton">
+        <i class="fas fa-bell"></i>
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
+              id="notificationBadge" style="display: none;">
+            0
+        </span>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end" style="width: 350px; max-height: 400px; overflow-y: auto;" 
+        id="notificationDropdownMenu">
+        <li>
+            <h6 class="dropdown-header d-flex justify-content-between align-items-center">
+                <span>Notifications</span>
+                <a href="@Url.Action("Index", "Notifications")" class="btn btn-sm btn-outline-primary">
+                    View All
+                </a>
+            </h6>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li id="notificationLoading" class="text-center py-3">
+            <div class="spinner-border spinner-border-sm" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </li>
+        <li id="noNotifications" class="text-center py-3 text-muted" style="display: none;">
+            <i class="fas fa-bell-slash"></i>
+            <br>
+            No notifications
+        </li>
+        <div id="notificationItems">
+            <!-- Notifications will be loaded here via JavaScript -->
+        </div>
+        <li><hr class="dropdown-divider" id="notificationDivider" style="display: none;"></li>
+        <li id="notificationActions" style="display: none;">
+            <div class="d-flex justify-content-between px-3 py-2">
+                <button type="button" class="btn btn-sm btn-outline-success" id="markAllReadBtn">
+                    <i class="fas fa-check-double"></i> Mark All Read
+                </button>
+                <a href="@Url.Action("Index", "Notifications")" class="btn btn-sm btn-primary">
+                    <i class="fas fa-list"></i> Manage
+                </a>
+            </div>
+        </li>
+    </ul>
+</div>
+
+<script>
+    $(document).ready(function() {
+        // Load notifications when dropdown is opened
+        $('#notificationButton').on('click', function() {
+            loadNotifications();
+        });
+
+        // Load notification count on page load
+        loadNotificationCount();
+
+        // Refresh notifications every 30 seconds
+        setInterval(function() {
+            loadNotificationCount();
+        }, 30000);
+
+        // Mark all as read functionality
+        $(document).on('click', '#markAllReadBtn', function() {
+            markAllAsRead();
+        });
+
+        // Mark single notification as read
+        $(document).on('click', '.notification-mark-read', function() {
+            var notificationId = $(this).data('notification-id');
+            markAsRead(notificationId);
+        });
+
+        function loadNotificationCount() {
+            $.ajax({
+                url: '@Url.Action("GetUnreadCount", "Notifications")',
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        updateNotificationBadge(response.count);
+                    }
+                },
+                error: function() {
+                    console.log('Error loading notification count');
+                }
+            });
+        }
+
+        function loadNotifications() {
+            $('#notificationLoading').show();
+            $('#noNotifications').hide();
+            $('#notificationItems').empty();
+            $('#notificationActions').hide();
+            $('#notificationDivider').hide();
+
+            $.ajax({
+                url: '@Url.Action("GetLatest", "Notifications")',
+                type: 'GET',
+                data: { take: 5 },
+                success: function(response) {
+                    $('#notificationLoading').hide();
+                    
+                    if (response.success && response.notifications.length > 0) {
+                        displayNotifications(response.notifications);
+                        $('#notificationActions').show();
+                        $('#notificationDivider').show();
+                    } else {
+                        $('#noNotifications').show();
+                    }
+                },
+                error: function() {
+                    $('#notificationLoading').hide();
+                    $('#noNotifications').show();
+                    console.log('Error loading notifications');
+                }
+            });
+        }
+
+        function displayNotifications(notifications) {
+            var html = '';
+            notifications.forEach(function(notification) {
+                var badgeClass = getBadgeClass(notification.type);
+                var isUnread = !notification.isRead;
+                
+                html += '<li>';
+                html += '<div class="dropdown-item-text px-3 py-2 ' + (isUnread ? 'bg-light' : '') + '" style="white-space: normal;">';
+                html += '<div class="d-flex justify-content-between align-items-start">';
+                html += '<div class="flex-grow-1">';
+                html += '<div class="d-flex align-items-center mb-1">';
+                html += '<span class="badge ' + badgeClass + ' me-2" style="font-size: 0.7em;">' + notification.type + '</span>';
+                if (isUnread) {
+                    html += '<span class="badge bg-primary me-2" style="font-size: 0.7em;">New</span>';
+                }
+                html += '</div>';
+                html += '<h6 class="mb-1" style="font-size: 0.9em;">' + notification.title + '</h6>';
+                html += '<p class="mb-1 text-muted" style="font-size: 0.8em;">' + notification.message + '</p>';
+                html += '<small class="text-muted" style="font-size: 0.7em;">' + notification.createdAt + '</small>';
+                html += '</div>';
+                if (isUnread) {
+                    html += '<button type="button" class="btn btn-sm btn-outline-success notification-mark-read" ';
+                    html += 'data-notification-id="' + notification.id + '" title="Mark as Read">';
+                    html += '<i class="fas fa-check"></i>';
+                    html += '</button>';
+                }
+                html += '</div>';
+                html += '</div>';
+                html += '</li>';
+            });
+            
+            $('#notificationItems').html(html);
+        }
+
+        function getBadgeClass(type) {
+            switch(type.toLowerCase()) {
+                case 'success': return 'bg-success';
+                case 'warning': return 'bg-warning text-dark';
+                case 'error': return 'bg-danger';
+                case 'info': return 'bg-info';
+                default: return 'bg-secondary';
+            }
+        }
+
+        function updateNotificationBadge(count) {
+            var badge = $('#notificationBadge');
+            if (count > 0) {
+                badge.text(count > 99 ? '99+' : count).show();
+            } else {
+                badge.hide();
+            }
+        }
+
+        function markAsRead(notificationId) {
+            $.ajax({
+                url: '@Url.Action("MarkAsRead", "Notifications")',
+                type: 'POST',
+                data: {
+                    id: notificationId,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        loadNotifications();
+                        loadNotificationCount();
+                    }
+                },
+                error: function() {
+                    console.log('Error marking notification as read');
+                }
+            });
+        }
+
+        function markAllAsRead() {
+            $.ajax({
+                url: '@Url.Action("MarkAllAsRead", "Notifications")',
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        loadNotifications();
+                        loadNotificationCount();
+                    }
+                },
+                error: function() {
+                    console.log('Error marking all notifications as read');
+                }
+            });
+        }
+    });
+</script>

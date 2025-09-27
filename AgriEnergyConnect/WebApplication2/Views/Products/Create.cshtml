@@ -1,4 +1,4 @@
-@model WebApplication2.Models.Product
+@model WebApplication2.Models.ViewModels.ProductCreateViewModel
 
 @using Microsoft.AspNetCore.Identity
 @using WebApplication2.Areas.Identity.Data
@@ -34,7 +34,7 @@
                     </h5>
                 </div>
                 <div class="card-body p-4">
-                    <form asp-action="Create" novalidate>
+                    <form asp-action="Create" class="needs-validation" novalidate enctype="multipart/form-data">
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
                         
                         <div class="mb-3">
@@ -50,8 +50,12 @@
                             <label asp-for="Category" class="form-label fw-semibold">
                                 <i class="bi bi-tag me-1"></i>Category
                             </label>
-                            <select asp-for="Category" asp-items="ViewBag.CategoriesSelectList" class="form-select form-select-lg" id="Category">
+                            <select asp-for="Category" class="form-select form-select-lg" id="Category">
                                 <option value="">-- Select a category --</option>
+                                @foreach (var category in Model.AvailableCategories)
+                                {
+                                    <option value="@category">@category</option>
+                                }
                             </select>
                             <span asp-validation-for="Category" class="text-danger small"></span>
                             <div class="form-text">Choose the category that best describes your product</div>
@@ -64,6 +68,15 @@
                             <input asp-for="ProductDate" type="date" class="form-control form-control-lg" />
                             <span asp-validation-for="ProductDate" class="text-danger small"></span>
                             <div class="form-text">When was this product produced or harvested?</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="productImage" class="form-label fw-semibold">
+                                <i class="bi bi-image me-1"></i>Product Image
+                            </label>
+                            <input type="file" class="form-control form-control-lg" id="productImage" name="productImage" accept=".jpg,.jpeg,.png,.gif,.bmp,.webp" />
+                            <div class="form-text">Supported formats: JPG, JPEG, PNG, GIF, BMP, WEBP (Max size: 5MB)</div>
+                            <div class="invalid-feedback">Please select a valid image file.</div>
                         </div>
 
                         <!-- Hidden UserId field -->

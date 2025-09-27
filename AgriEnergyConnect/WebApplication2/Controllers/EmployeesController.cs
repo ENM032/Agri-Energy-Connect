@@ -8,7 +8,10 @@ using Microsoft.IdentityModel.Tokens;
 using WebApplication2.Areas.Identity.Data;
 using WebApplication2.Data;
 using WebApplication2.Models;
+using WebApplication2.Models.ViewModels;
 using Microsoft.Extensions.Logging;
+using WebApplication2.Services;
+using AutoMapper;
 
 namespace WebApplication2.Controllers
 {
@@ -22,17 +25,23 @@ namespace WebApplication2.Controllers
         private readonly UserManager<WebApplication2User> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ILogger<EmployeesController> _logger;
+        private readonly INotificationService _notificationService;
+        private readonly IMapper _mapper;
 
         public EmployeesController(
             WebApplication2Context context, 
             UserManager<WebApplication2User> userManager, 
             RoleManager<IdentityRole> roleManager,
-            ILogger<EmployeesController> logger)
+            ILogger<EmployeesController> logger,
+            INotificationService notificationService,
+            IMapper mapper)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
             _roleManager = roleManager ?? throw new ArgumentNullException(nameof(roleManager));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
         /// <summary>
@@ -115,6 +124,15 @@ namespace WebApplication2.Controllers
                     {
                         // Assign Support Employee role to user
                         await _userManager.AddToRoleAsync(user, "Support Employee");
+                        
+                        // Create welcome notification for new Support Employee
+                        await _notificationService.CreateNotificationAsync(
+                            user.Id,
+                            "Welcome to AgriEnergyConnect Support Team!",
+                            $"Welcome {model.DisplayName}! Your Support Employee account has been created. You now have access to support tools and can assist farmers on the platform.",
+                            NotificationType.Success
+                        );
+                        
                         _logger.LogInformation("Support Employee account created successfully for {Email} by admin", model.Email);
                         TempData["SuccessMessage"] = "Support Employee account created successfully!";
                         return RedirectToAction("Index", "Home");
@@ -308,44 +326,57 @@ namespace WebApplication2.Controllers
         /// <summary>
         /// Display all farmer products with filtering options and pagination
         /// </summary>
-        public async Task<IActionResult> FarmerProducts(int page = 1, int pageSize = 20)
+        public async Task<IActionResult> FarmerProducts(int page = 1, int pageSize = 10)
         {
             try
             {
-                // Use cached farmers for better performance
                 var farmers = await GetFarmersWithCachingAsync();
-                ViewData["UserName"] = new SelectList(farmers, "UserName", "UserName");
-                ViewBag.CategoriesSelectList = new SelectList(ProductsController.GetCategories(), "Value", "Text");
-                
-                // Implement pagination for better performance
+                var farmerSelectList = farmers.Select(u => new SelectListItem
+                {
+                    Value = u.Id,
+                    Text = u.UserName
+                }).ToList();
+
+                var categorySelectList = ProductsController.GetCategories();
+
                 var totalProducts = await _context.Products.CountAsync();
+                var totalPages = (int)Math.Ceiling((double)totalProducts / pageSize);
+
                 var products = await _context.Products
                     .Include(p => p.User)
+                    .Include(p => p.Category)
                     .OrderByDescending(p => p.ProductDate)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .AsNoTracking() // Improve performance for read-only data
                     .ToListAsync();
-                
-                // Pass pagination info to view
-                ViewBag.CurrentPage = page;
-                ViewBag.PageSize = pageSize;
-                ViewBag.TotalPages = (int)Math.Ceiling((double)totalProducts / pageSize);
-                ViewBag.TotalProducts = totalProducts;
-                
-                if (!products.Any())
+
+                var viewModel = new FarmerProductsViewModel
                 {
-                    TempData["InfoMessage"] = "No products available to display. Farmers still need to add their products.";
-                }
-                
-                _logger.LogInformation("Retrieved {ProductCount} farmer products for display (Page {Page})", products.Count, page);
-                return View(products);
+                    Products = _mapper.Map<List<ProductViewModel>>(products),
+                    UserNameList = new SelectList(farmerSelectList, "Value", "Text"),
+                    CategoriesSelectList = new SelectList(categorySelectList, "Value", "Text"),
+                    CurrentPage = page,
+                    PageSize = pageSize,
+                    TotalPages = totalPages,
+                    TotalProducts = totalProducts
+                };
+
+                return View(viewModel);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving farmer products");
-                TempData["ErrorMessage"] = "An error occurred while loading farmer products. Please try again.";
-                return View(new List<Product>());
+                _logger.LogError(ex, "Error occurred while retrieving farmer products");
+                var emptyViewModel = new FarmerProductsViewModel
+                {
+                    Products = new List<ProductViewModel>(),
+                    UserNameList = new SelectList(new List<SelectListItem>(), "Value", "Text"),
+                    CategoriesSelectList = new SelectList(new List<SelectListItem>(), "Value", "Text"),
+                    CurrentPage = 1,
+                    PageSize = pageSize,
+                    TotalPages = 0,
+                    TotalProducts = 0
+                };
+                return View(emptyViewModel);
             }
         }
 
@@ -353,84 +384,95 @@ namespace WebApplication2.Controllers
         /// Filter farmer products based on user, category, and date range with pagination
         /// </summary>
         [HttpPost]
-        public async Task<IActionResult> FarmerProducts(string selectedUser, string selectedCategory, DateTime betweenStartDate, DateTime betweenEndDate, int page = 1, int pageSize = 20)
+        public async Task<IActionResult> FarmerProducts(string selectedUser, int? selectedCategory, DateTime? startDate, DateTime? endDate, int page = 1, int pageSize = 10)
         {
             try
             {
-                // Use cached farmers for better performance
                 var farmers = await GetFarmersWithCachingAsync();
-                ViewData["UserName"] = new SelectList(farmers, "UserName", "UserName");
-                ViewBag.CategoriesSelectList = new SelectList(ProductsController.GetCategories(), "Value", "Text");
-                
-                // Build query dynamically based on filters
-                var query = _context.Products.Include(p => p.User).AsQueryable();
-                
-                // Apply user filter
+                var farmerSelectList = farmers.Select(u => new SelectListItem
+                {
+                    Value = u.Id,
+                    Text = u.UserName,
+                    Selected = u.UserName == selectedUser
+                }).ToList();
+
+                var categorySelectList = ProductsController.GetCategories().Select(c => new SelectListItem
+                {
+                    Value = c.Value,
+                    Text = c.Text,
+                    Selected = c.Value == selectedCategory?.ToString()
+                }).ToList();
+
+                var query = _context.Products
+                    .Include(p => p.User)
+                    .Include(p => p.Category)
+                    .AsQueryable();
+
                 if (!string.IsNullOrEmpty(selectedUser))
                 {
-                    query = query.Where(x => x.User.UserName == selectedUser);
+                    query = query.Where(p => p.User != null && p.User.UserName == selectedUser);
                 }
-                
-                // Apply category filter
-                if (!string.IsNullOrEmpty(selectedCategory))
-                {
-                    query = query.Where(x => x.Category == selectedCategory);
-                }
-                
-                // Apply date range filter
-                if (betweenStartDate != DateTime.MinValue && betweenEndDate != DateTime.MinValue)
-                {
-                    query = query.Where(x => x.ProductDate >= betweenStartDate && x.ProductDate <= betweenEndDate);
-                }
-                
-                query = query.OrderByDescending(p => p.ProductDate);
 
-                // Get total count for pagination
+                if (selectedCategory.HasValue)
+                {
+                    var categoryName = ProductsController.GetCategories()
+                        .FirstOrDefault(c => c.Value == selectedCategory.Value.ToString())?.Text;
+                    if (!string.IsNullOrEmpty(categoryName))
+                    {
+                        query = query.Where(p => p.Category == categoryName);
+                    }
+                }
+
+                if (startDate.HasValue)
+                {
+                    query = query.Where(p => p.ProductDate >= startDate.Value);
+                }
+
+                if (endDate.HasValue)
+                {
+                    query = query.Where(p => p.ProductDate <= endDate.Value);
+                }
+
                 var totalProducts = await query.CountAsync();
-                
-                // Apply pagination and use AsNoTracking for better performance
+                var totalPages = (int)Math.Ceiling((double)totalProducts / pageSize);
+
                 var products = await query
+                    .OrderByDescending(p => p.ProductDate)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .AsNoTracking()
                     .ToListAsync();
-                
-                // Pass pagination and filter info to view
-                ViewBag.CurrentPage = page;
-                ViewBag.PageSize = pageSize;
-                ViewBag.TotalPages = (int)Math.Ceiling((double)totalProducts / pageSize);
-                ViewBag.TotalProducts = totalProducts;
-                ViewBag.SelectedUser = selectedUser;
-                ViewBag.SelectedCategory = selectedCategory;
-                ViewBag.StartDate = betweenStartDate;
-                ViewBag.EndDate = betweenEndDate;
-                
-                if (!products.Any())
+
+                var viewModel = new FarmerProductsViewModel
                 {
-                    TempData["InfoMessage"] = "No products found matching the selected criteria.";
-                }
-                
-                _logger.LogInformation("Filtered farmer products: {ProductCount} results (Page {Page})", products.Count, page);
-                return View(products);
+                    Products = _mapper.Map<List<ProductViewModel>>(products),
+                    UserNameList = new SelectList(farmerSelectList, "Value", "Text"),
+                    CategoriesSelectList = new SelectList(categorySelectList, "Value", "Text"),
+                    SelectedUser = selectedUser,
+                    SelectedCategory = selectedCategory?.ToString(),
+                    BetweenStartDate = startDate,
+                    BetweenEndDate = endDate,
+                    CurrentPage = page,
+                    PageSize = pageSize,
+                    TotalPages = totalPages,
+                    TotalProducts = totalProducts
+                };
+
+                return View(viewModel);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error filtering farmer products");
-                TempData["ErrorMessage"] = "An error occurred while filtering products. Please try again.";
-                
-                // Return to unfiltered view on error with pagination
-                var farmers = await GetFarmersWithCachingAsync();
-                ViewData["UserName"] = new SelectList(farmers, "UserName", "UserName");
-                ViewBag.CategoriesSelectList = new SelectList(ProductsController.GetCategories(), "Value", "Text");
-                
-                var fallbackProducts = await _context.Products
-                    .Include(p => p.User)
-                    .OrderByDescending(p => p.ProductDate)
-                    .Take(pageSize)
-                    .AsNoTracking()
-                    .ToListAsync();
-                    
-                return View(fallbackProducts);
+                _logger.LogError(ex, "Error occurred while filtering farmer products");
+                var emptyViewModel = new FarmerProductsViewModel
+                {
+                    Products = new List<ProductViewModel>(),
+                    UserNameList = new SelectList(new List<SelectListItem>(), "Value", "Text"),
+                    CategoriesSelectList = new SelectList(new List<SelectListItem>(), "Value", "Text"),
+                    CurrentPage = 1,
+                    PageSize = pageSize,
+                    TotalPages = 0,
+                    TotalProducts = 0
+                };
+                return View(emptyViewModel);
             }
         }
 
